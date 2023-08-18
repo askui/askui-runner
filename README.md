@@ -47,6 +47,8 @@ Once you've installed the runner, you'll need to configure and start it:
    credentials:
      access_token: <ASKUI ACCESS TOKEN>
      workspace_id: <ASKUI WORKSPACE ID>
+   runner:
+     exec: python -m runner
    ```
 
 3. Start the runner using the following command, making sure to reference your configuration file:
