@@ -1,0 +1,35 @@
+import { UiControlClient, UiController } from 'askui';
+import 'jest-allure-circus';
+import { AskUIAllureStepReporter } from '@askui/askui-reporters';
+
+let aui: UiControlClient;
+
+jest.setTimeout(60 * 1000 * 60);
+
+beforeAll(async () => {
+  aui = await UiControlClient.build({
+    inferenceServerUrl: "{{ inference_api_url }}",
+    credentials: {
+      workspaceId: "{{ credentials.workspace_id }}",
+      token: "{{ credentials.access_token }}",
+    },
+    reporter: new AskUIAllureStepReporter(),
+  });
+  await aui.connect();
+});
+
+beforeEach(async () => {
+  await aui.startVideoRecording();
+});
+
+afterEach(async () => {
+  await aui.stopVideoRecording();
+  const video = await aui.readVideoRecording();
+  AskUIAllureStepReporter.attachVideo(video);
+});
+
+afterAll(async () => {
+  aui.disconnect();
+});
+
+export { aui };

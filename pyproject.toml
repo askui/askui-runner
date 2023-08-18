@@ -1,0 +1,61 @@
+
+[project]
+name = "askui-runner"
+version = "0.1.0"
+description = "Runner for Workflows Defined in AskUI Studio"
+dependencies = [
+    "dependency-injector<5",
+    "pydantic<2",
+    "jinja2<4",
+    "requests<3",
+    "tenacity<9",
+    "requests-toolbelt<2",
+    "pyyaml<7",
+    "typer[all]<1",
+    "kubernetes<24",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "UNLICENSED"}
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "import-linter<2.0.0",
+]
+
+[tool.importlinter]
+root_package = "runner"
+
+[[tool.importlinter.contracts]]
+name = "Layered app architecture"
+type = "layers"
+layers = [
+    "runner.__main__",
+    "runner.containers",
+    "runner.config",
+    "runner.modules.queue",
+    "runner.modules.core",
+]
+
+[[tool.importlinter.contracts]]
+name = "Layered module architecture (core)"
+type = "layers"
+layers = [
+    "runner.modules.core.containers",
+    "runner.modules.core.config",
+    "runner.modules.core.application",
+    "runner.modules.core.infrastructure",
+    "runner.modules.core.domain",
+    "runner.modules.core.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "Layered module architecture (jobs queue)"
+type = "layers"
+layers = [
+    "runner.modules.queue.containers",
+    "runner.modules.queue.application",
+    "runner.modules.queue.infrastructure",
+    "runner.modules.queue.domain",
+    "runner.modules.queue.models",
+]
