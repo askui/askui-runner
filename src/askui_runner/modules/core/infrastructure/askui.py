@@ -16,9 +16,3 @@ class AskUiAccessToken(BaseModel):
     def to_auth_header(self) -> str:
         base64_token = self.to_base64()
         return f"Basic {base64_token}"
-
-
-# TODO Make access token non optional, have selector provider with host as descriminator
-
-if __name__ == "__main__":
-    print(AskUiAccessToken(access_token="8Br-mIruaCqV65NsuVPr").to_auth_header())

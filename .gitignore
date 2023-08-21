@@ -159,5 +159,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# Import linter
+.import_linter_cache/
+
 # Mac
 .DS_Store
