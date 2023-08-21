@@ -3,10 +3,10 @@ from typing import Annotated
 
 import typer
 
-import runner.modules.core.models
-
 from .config import Config, read_config
 from .modules.core.containers import Container as CoreContainer
+from .modules.core.models import Config as CoreConfig
+from .modules.core.models import ResultsConfig, WorkflowsConfig
 from .modules.queue.containers import Container as QueueContainer
 from .modules.queue.models import EntryPoint
 
@@ -17,7 +17,7 @@ def run_jobs_from_queue(config: Config) -> None:
     container.runner_jobs_queue_polling_application_service().poll()
 
 
-def run_job(config: Config) -> None:  # TODO Run in subprocess or k8s job
+def run_job(config: Config) -> None:
     runner_core_config = build_runner_core_config(config)
     container = CoreContainer()
     container.config.from_pydantic(runner_core_config)
@@ -31,17 +31,17 @@ def build_runner_core_config(config: Config):
         raise ValueError(
             'Expected job to be defined in config because entrypoint is set to "job" but found no defnition'
         )
-    return runner.modules.core.models.Config(
+    return CoreConfig(
         credentials=runner_job_data.credentials,
         enable=config.runner.enable,
         inference_api_url=runner_job_data.inference_api_url,
         project_dir=config.runner.project_dir,
-        workflows=runner.modules.core.models.WorkflowsConfig(
+        workflows=WorkflowsConfig(
             api_url=runner_job_data.workflows_api_url,
             dir=config.runner.workflows_dir,
             prefixes=runner_job_data.workflows,
         ),
-        results=runner.modules.core.models.ResultsConfig(
+        results=ResultsConfig(
             api_url=runner_job_data.results_api_url,
             dir=config.runner.results_dir,
         ),

@@ -2,10 +2,11 @@ from typing import Optional
 
 import requests
 
-import runner.modules.queue.models
-
 from ...domain import services
 from ...domain.services import RunnerJob, RunnerJobsQueuePingResult
+from ...models import RunnerJobsFilters
+
+REQUEST_TIMEOUT_IN_S = 60
 
 
 class AskUiRunnerJobsQueueService(services.RunnerJobsQueue):
@@ -13,27 +14,28 @@ class AskUiRunnerJobsQueueService(services.RunnerJobsQueue):
         self.url = url
         self.headers = headers
 
-    def lease(
-        self, filters: runner.modules.queue.models.RunnerJobsFilters
-    ) -> Optional[RunnerJob]:
-        response = requests.post(
-            f"{self.url}/lease",
-            headers=self.headers,
-            timeout=5,
-            params=filters.dict(),
-        )
-        if response.status_code != 200:
-            response.raise_for_status()
-        if response.json() is None:
-            return
-        return RunnerJob(**response.json())
+    def lease(self, filters: RunnerJobsFilters) -> Optional[RunnerJob]:
+        try:
+            response = requests.post(
+                f"{self.url}/lease",
+                headers=self.headers,
+                timeout=REQUEST_TIMEOUT_IN_S,
+                params=filters.dict(),
+            )
+            if response.status_code != 200:
+                response.raise_for_status()
+            if response.json() is None:
+                return
+            return RunnerJob(**response.json())
+        except Exception as error:
+            print(error)
 
     def ping(self, runner_job: RunnerJob) -> RunnerJobsQueuePingResult:
         response = requests.post(
             f"{self.url}/ping",
             params={"ack": runner_job.ack},
             headers=self.headers,
-            timeout=5,
+            timeout=REQUEST_TIMEOUT_IN_S,
         )
         if response.status_code != 200:
             response.raise_for_status()
@@ -52,10 +54,13 @@ class AskUiRunnerJobsQueueService(services.RunnerJobsQueue):
         self.complete(runner_job)
 
     def complete(self, runner_job: RunnerJob) -> None:
-        requests.post(
-            f"{self.url}/complete",
-            params={"ack": runner_job.ack},
-            headers=self.headers,
-            json={"status": runner_job.status.value},
-            timeout=5,
-        )
+        try:
+            requests.post(
+                f"{self.url}/complete",
+                params={"ack": runner_job.ack},
+                headers=self.headers,
+                json={"status": runner_job.status.value},
+                timeout=REQUEST_TIMEOUT_IN_S,
+            )
+        except Exception as error:
+            print(error)

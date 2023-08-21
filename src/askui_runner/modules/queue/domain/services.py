@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
-from runner.modules.queue.models import Config, RunnerJobData, RunnerJobsFilters
+from ..models import Config, RunnerJobData, RunnerJobsFilters
 
 
 class System(ABC):
@@ -23,12 +23,12 @@ class Clock(ABC):
         raise NotImplementedError()
 
 
-class RunnerJobsQueuePingResult(BaseModel):  # TODO Make names similar to our queue
+class RunnerJobsQueuePingResult(BaseModel):
     visible: int
     cancel_job: bool
 
 
-class RunnerJobStatus(str, Enum):  # TODO Check how well I can differentiate
+class RunnerJobStatus(str, Enum):
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     PASSED = "PASSED"
@@ -37,7 +37,7 @@ class RunnerJobStatus(str, Enum):  # TODO Check how well I can differentiate
     MAX_RETRIES_EXCEEDED = "MAX_RETRIES_EXCEEDED"
 
 
-class RunnerJob(BaseModel):  # TODO use datetime instead of int
+class RunnerJob(BaseModel):
     id: str
     ack: str
     status: RunnerJobStatus
@@ -108,12 +108,11 @@ class Runner(ABC):
     def stop(self) -> None:
         raise NotImplementedError()
 
+PING_THRESHOLD_IN_S = 60
+RUNNER_POLLING_INTERVAL_IN_S = 10
 
-class LeaseExpiredError(Exception):
-    def __init__(self, job: RunnerJob):
-        self.job = job
-        super().__init__(f"Lease of job {job.id} with ack {job.ack} has expired.")
-
+class PingError(Exception):
+    pass
 
 class RunnerJobsQueuePolling:
     def __init__(
@@ -143,22 +142,25 @@ class RunnerJobsQueuePolling:
             self._run(job)
 
     def _run(self, job: RunnerJob) -> None:
-        self.runner.start(runner_job=job)
-        while self.runner.is_running():
-            if job.should_ping(
-                now=self.clock.now(), ping_threshold=60
-            ):  # TODO Make ping threshold configurable
-                self._ping(job)
-            self.clock.sleep(
-                10
-            )  # TODO Put sleep time into constant and make sleep time configurable, should be lesser than the ping threshold, should be lesser than timeout
-            if self.has_job_timed_out():
-                self._fail_run(job)
-                return
-        return self._complete_run(job)
+        try:
+            self.runner.start(runner_job=job)
+            while self.runner.is_running():
+                if job.should_ping(
+                    now=self.clock.now(), ping_threshold=PING_THRESHOLD_IN_S
+                ):
+                    self._ping(job)
+                self.clock.sleep(RUNNER_POLLING_INTERVAL_IN_S)
+                if self.has_job_timed_out():
+                    self._fail_run(job)
+                    return
+            self._complete_run(job)
+        except PingError as error:
+            print(error)
+            self.runner.stop()
+            return
 
     def _fail_run(self, job: RunnerJob) -> None:
-        self.runner.stop() # TODO Not stopped
+        self.runner.stop()
         self.queue.fail(job)
 
     def _cancel_run(self, job: RunnerJob) -> None:
@@ -173,16 +175,13 @@ class RunnerJobsQueuePolling:
 
     def _ping(self, job: RunnerJob) -> None:
         try:
-            return self._try_ping(job) # TODO Error seem to have killed it
-        except LeaseExpiredError:
-            self._fail_run(job)
-
-    def _try_ping(self, job: RunnerJob):
-        ping_result = self.queue.ping(job)
-        if ping_result.cancel_job:
-            self._cancel_run(job)
-            return
-        job.visible = ping_result.visible
+            ping_result = self.queue.ping(job)
+            if ping_result.cancel_job:
+                self._cancel_run(job)
+                return
+            job.visible = ping_result.visible
+        except Exception as error:
+            raise PingError from error
 
     def _sleep_until_next_poll_or_exit(self) -> None:
         if not self.config.keep_alive:

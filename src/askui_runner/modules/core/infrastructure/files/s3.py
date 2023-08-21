@@ -20,6 +20,7 @@ class ListObjectsResponse(BaseModel):
     continuation_token: str | None
     prefix: str | None
 
+REQUEST_TIMEOUT_IN_S=60
 
 class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
     def __init__(self, base_url: str, headers: dict[str, str]):
@@ -56,7 +57,7 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
                     **self.headers,
                     **headers,
                 },
-                timeout=5,
+                timeout=REQUEST_TIMEOUT_IN_S,
             )
             if response.status_code != 200:
                 response.raise_for_status()
@@ -88,7 +89,7 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
         response = requests.get(
             url,
             headers=self.headers,
-            timeout=5,
+            timeout=REQUEST_TIMEOUT_IN_S,
             stream=True,
         )
         if response.status_code != 200:
@@ -124,7 +125,7 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
         if continuation_token is not None:
             params["continuation-token"] = continuation_token
         list_url = f"{self.base_url}?{urlencode(params)}"
-        response = requests.get(list_url, headers=self.headers, timeout=5)
+        response = requests.get(list_url, headers=self.headers, timeout=REQUEST_TIMEOUT_IN_S)
         if response.status_code != 200:
             response.raise_for_status()
         return self.map_list_objects_response(response.content)
