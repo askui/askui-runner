@@ -2,12 +2,11 @@ import json
 import os
 import subprocess
 import tempfile
-from typing import Optional, Protocol
+from typing import Optional
 
 from ...domain import services
 from ...domain.services import RunnerJob
-from ...models import Config as RunnerConfig
-from ...models import RunnerJobData
+from .shared import RunnerConfigFactory
 
 
 def stop(process: subprocess.Popen[bytes], timeout: int = 30) -> None: # TODO Test!
@@ -16,11 +15,6 @@ def stop(process: subprocess.Popen[bytes], timeout: int = 30) -> None: # TODO Te
         process.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
         process.kill()
-
-
-class RunnerConfigFactory(Protocol):
-    def __call__(self, runner_job_data: RunnerJobData) -> RunnerConfig:
-        ...
 
 
 class SubprocessRunner(services.Runner):

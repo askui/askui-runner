@@ -134,6 +134,7 @@ class RunnerJobsQueuePolling:
 
     def poll(self) -> None:
         while True:
+            print("Polling...")
             job: RunnerJob | None = self.queue.lease(filters=self.config.filters)
             if job is None:
                 self._sleep_until_next_poll_or_exit()
@@ -143,16 +144,20 @@ class RunnerJobsQueuePolling:
 
     def _run(self, job: RunnerJob) -> None:
         try:
+            print(f"Starting job {job.id}...")
             self.runner.start(runner_job=job)
             while self.runner.is_running():
+                print(f"Running job {job.id}...")
                 if job.should_ping(
                     now=self.clock.now(), ping_threshold=PING_THRESHOLD_IN_S
                 ):
                     self._ping(job)
                 self.clock.sleep(RUNNER_POLLING_INTERVAL_IN_S)
                 if self.has_job_timed_out():
+                    print(f"Job {job.id} timed out.")
                     self._fail_run(job)
                     return
+            print(f"Job {job.id} completed.")
             self._complete_run(job)
         except PingError as error:
             print(error)

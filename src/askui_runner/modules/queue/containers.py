@@ -18,6 +18,7 @@ def build_runner_config(
 ) -> Config:
     config = Config.parse_obj(config_dict)
     config.queue = None
+    config.runner.type = RunnerType.SUBPROCESS # TODO Don't mix up the queue (exec, type, job timeout) and the runner
     config.entrypoint = EntryPoint.JOB
     config.credentials = runner_job_data.credentials
     config.job = runner_job_data  # TODO Remove duplication of WorkspaceCredentials
@@ -59,6 +60,7 @@ class Container(containers.DeclarativeContainer):
             ),
             RunnerType.K8S_JOB: providers.Singleton(
                 K8sJobRunner,
+                runner_config_factory=runner_config_factory.provider,
             ),
         },
     )
