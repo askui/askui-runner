@@ -57,14 +57,14 @@ def take_entrypoint(config: Config) -> None:
 
 
 def main(
-    config_file_path: Annotated[
+    config_json_or_config_file_path: Annotated[
         str,
         typer.Option(
-            "--config", "-c", help="Path to config file (.json, .yaml, .yml supported)"
+            "--config", "-c", help="Path to config file (.json, .yaml, .yml supported) or config provided as json"
         ),
     ],
 ) -> None:
-    config = read_config(config_file_path)
+    config = read_config(config_json_or_config_file_path)
     take_entrypoint(config)
 
 
