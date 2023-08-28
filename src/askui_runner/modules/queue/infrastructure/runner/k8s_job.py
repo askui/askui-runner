@@ -160,11 +160,7 @@ class K8sJobRunner(Runner):
         """
         try:
             job_status = self._get_k8s_job_status()
-            return (
-                job_status.active is not None
-                and job_status.active > 0
-                and (job_status.failed is None or job_status.failed == 0)
-            )
+            return not self.has_passed() and not self.has_failed()
         except:
             return False
 
