@@ -1,33 +1,22 @@
+from importlib.metadata import version
+
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
 from ...domain.services import Runner, RunnerJob
+from ...models import K8sJobRunnerConfig
 from .shared import RunnerConfigFactory
-
-NAMESPACE = "dev"
-LABEL_PREFIX = "askui.com"
 
 
 class K8sJobRunner(Runner):
-    def __init__(self, runner_config_factory: RunnerConfigFactory):
-        self.load_config()
+    def __init__(self, config: K8sJobRunnerConfig, runner_config_factory: RunnerConfigFactory):
+        self.config = config
+        self.load_k8s_config()
         self.batch_api = client.BatchV1Api()
-        # TODO Make configurable
-        self.namespace = NAMESPACE
-        self.name = "askui-runner"
-        self.label_prefix = LABEL_PREFIX
-        self.version = "0.1.0"
-        self.ttl_seconds_after_finished = 120
-        # TODO Authentication
-        self.runner_image = "askuigmbh/askui-runner:test"
-        self.controller_name = "askui-ui-controller"
-        self.controller_image = (
-            "askuigmbh/askui-ui-controller:v0.11.2-chrome-100.0.4896.60-amd64"
-        )
         self.runner_config_factory = runner_config_factory
         self.k8s_job: client.V1Job | None = None
 
-    def load_config(self) -> None:
+    def load_k8s_config(self) -> None:
         try:
             print("Loading in-cluster config...")
             config.load_incluster_config()
@@ -37,17 +26,18 @@ class K8sJobRunner(Runner):
 
     def _build_k8s_job(self, runner_job: RunnerJob) -> client.V1Job:
         # TODO Is job removed after ttl_seconds_after_finished?
-        name = f"{self.name}-{runner_job.id}-{runner_job.tries}"
+        name = f"askui-runner-{runner_job.id}-{runner_job.tries}"
+        label_prefix = "askui.com"
         labels = {
             "app.kubernetes.io/name": name,
-            "app.kubernetes.io/instance": f"{self.name}-{runner_job.id}",
-            "app.kubernetes.io/version": self.version,
+            "app.kubernetes.io/instance": name,
+            "app.kubernetes.io/version": version("askui-runner"),
             "app.kubernetes.io/component": "runner",
             "app.kubernetes.io/part-of": "runner",
-            "app.kubernetes.io/managed-by": self.name,
-            f"{self.label_prefix}/runner-job-id": runner_job.id,
-            f"{self.label_prefix}/workspace-id": runner_job.data.credentials.workspace_id,
-            f"{self.label_prefix}/runner-id": runner_job.runner_id,
+            # "app.kubernetes.io/managed-by": ,
+            f"{label_prefix}/runner-job-id": runner_job.id,
+            f"{label_prefix}/workspace-id": runner_job.data.credentials.workspace_id,
+            f"{label_prefix}/runner-id": runner_job.runner_id,
             # TODO Add run id and schedule id
             # TODO Add tags, host, etc.
         }
@@ -60,14 +50,15 @@ class K8sJobRunner(Runner):
                 labels=labels,
             ),
             spec=client.V1JobSpec(
-                ttl_seconds_after_finished=self.ttl_seconds_after_finished,
+                ttl_seconds_after_finished=120,
                 template=client.V1PodTemplateSpec(
                     spec=client.V1PodSpec(
                         restart_policy="Never",
                         containers=[
                             client.V1Container(
-                                name=self.name,
-                                image=self.runner_image,
+                                name="askui-runner",
+                                image=self.config.runner_container.image,
+                                image_pull_policy="Always",
                                 command=["/bin/sh", "-c"],
                                 args=[ # TODO Is it safe to use single quotation marks inside the json?
                                     f"""
@@ -85,8 +76,8 @@ class K8sJobRunner(Runner):
                                 ],
                             ),
                             client.V1Container(
-                                name=self.controller_name,
-                                image=self.controller_image,
+                                name="askui-controller",
+                                image=self.config.controller_container.image,
                                 command=["/bin/sh", "-c"],
                                 args=[ 
                                     # Doesn't handle pod restart --> exits immediately because of existing EXIT file
@@ -133,7 +124,7 @@ class K8sJobRunner(Runner):
         try:
             self.batch_api.create_namespaced_job(
                 body=job,
-                namespace=self.namespace,
+                namespace=self.config.namespace,
             )
         except ApiException as exception:
             self._handle_api_exception(exception)
@@ -151,7 +142,7 @@ class K8sJobRunner(Runner):
                 raise Exception("No Kubernetes job has been created or started yet.")
             job: client.V1Job = self.batch_api.read_namespaced_job(
                 name=self.k8s_job.metadata.name,  # type: ignore
-                namespace=self.namespace,
+                namespace=self.config.namespace,
             )
             if not job.status:
                 raise Exception(
@@ -210,7 +201,7 @@ class K8sJobRunner(Runner):
         try:
             self.batch_api.delete_namespaced_job(
                 name=self.k8s_job.metadata.name,  # type: ignore
-                namespace=self.namespace,
+                namespace=self.config.namespace,
             )
         except ApiException as e:
             self._handle_api_exception(e)

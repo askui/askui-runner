@@ -10,7 +10,14 @@ from .infrastructure.runner.k8s_job import K8sJobRunner
 from .infrastructure.runner.subprocess import SubprocessRunner
 from .infrastructure.runner_jobs_queue.askui import AskUiRunnerJobsQueueService
 from .infrastructure.system.sys import SysSystem
-from .models import Config, EntryPoint, Host, RunnerJobData, RunnerType
+from .models import (
+    Config,
+    EntryPoint,
+    Host,
+    K8sJobRunnerConfig,
+    RunnerJobData,
+    RunnerType,
+)
 
 
 def build_runner_config(
@@ -60,6 +67,10 @@ class Container(containers.DeclarativeContainer):
             ),
             RunnerType.K8S_JOB: providers.Singleton(
                 K8sJobRunner,
+                config=providers.Factory(
+                    K8sJobRunnerConfig.parse_obj,
+                    config.queue.k8s_job_runner,
+                ),
                 runner_config_factory=runner_config_factory.provider,
             ),
         },

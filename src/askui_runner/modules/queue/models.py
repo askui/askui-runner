@@ -1,11 +1,22 @@
 import enum
-import os
 from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, BaseSettings, Field, validator
 
 from ..core.models import FeatureToggles, WorkspaceCredentials
+
+
+class ContainerConfig(BaseModel):
+    image: str
+
+
+class K8sJobRunnerConfig(BaseModel): # TODO Adjust
+    namespace: str = "dev"
+    runner_container = ContainerConfig(image="askuigmbh/askui-runner:test")
+    controller_container = ContainerConfig(
+        image="askuigmbh/askui-ui-controller:v0.11.2-chrome-100.0.4896.60-amd64"
+    )
 
 
 class RunnerType(str, enum.Enum):
@@ -73,7 +84,7 @@ class RunnerJobsQueuePollingConfig(BaseModel):
 
 class QueueConfig(BaseModel):
     api_url: str = Field(
-        "https://app-gateway-api.askui.com/dev/api/v1/workspaces/{workspace_id}/runner-jobs", # TODO Adjust
+        "https://app-gateway-api.askui.com/dev/api/v1/workspaces/{workspace_id}/runner-jobs",  # TODO Adjust
         description="URL of the runner jobs queue API",
     )
     keep_alive: bool = Field(
@@ -82,6 +93,9 @@ class QueueConfig(BaseModel):
     )
     polling_interval: int = Field(
         30, description="Interval in seconds to poll for jobs from the queue"
+    )
+    k8s_job_runner: K8sJobRunnerConfig = Field(
+        K8sJobRunnerConfig(), description="Configuration of the Kubernetes runner"
     )
 
 
@@ -107,7 +121,9 @@ class Config(
     runner: RunnerConfig = Field(
         RunnerConfig(), description="Configuration of the runner"  # type: ignore
     )
-    credentials: WorkspaceCredentials | None = Field(description="Credentials for accessing the workspace")
+    credentials: WorkspaceCredentials | None = Field(
+        description="Credentials for accessing the workspace"
+    )
     queue: Optional[QueueConfig] = Field(
         QueueConfig(), description="Configuration of the queue"  # type: ignore
     )
@@ -115,7 +131,9 @@ class Config(
         3600,
         description="Timeout in seconds for a job to be completed before it is considered failed",
     )
-    job: Optional[RunnerJobData] # TODO Use a discrimnated union to differentiate queue and job
+    job: Optional[
+        RunnerJobData
+    ]  # TODO Use a discrimnated union to differentiate queue and job
 
     @validator("credentials", always=True)
     def validate_credentials_set_when_self_hosted(  # pylint: disable=no-self-argument
@@ -138,7 +156,9 @@ class Config(
                 'Queue configuration must be given when entrypoint is "queue"'
             )
         if v is not None and values["credentials"] is not None:
-            v.api_url = v.api_url.format(workspace_id=values["credentials"].workspace_id)
+            v.api_url = v.api_url.format(
+                workspace_id=values["credentials"].workspace_id
+            )
         return v
 
     @validator("job", always=True)
