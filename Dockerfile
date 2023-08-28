@@ -1,5 +1,3 @@
-ARG BASE_IMAGE
-ARG PROJECT_NAME=runner
 ARG PYTHON_VERSION=3.10
 ARG NODE_VERSION=16
 
@@ -9,7 +7,6 @@ ARG NODE_VERSION=16
 
 FROM python:${PYTHON_VERSION}-alpine AS builder
 ARG PYTHON_VERSION
-ARG PROJECT_NAME
 
 RUN pip install -U pip setuptools wheel 
 RUN pip install pdm

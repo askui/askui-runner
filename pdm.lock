@@ -6,7 +6,7 @@ groups = ["default", "dev"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:6432f5e449ce285c32469ab072007669b8d433ad879f6a17e8f4af980fb8ec8b"
+content_hash = "sha256:a9ded8754ccc4703d66f70d222611d88407015b4ee68050577917b13feab1ef3"
 
 [[package]]
 name = "cachetools"
