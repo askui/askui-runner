@@ -137,7 +137,7 @@ class Config(
             raise ValueError(
                 'Queue configuration must be given when entrypoint is "queue"'
             )
-        if v is not None:
+        if v is not None and values["credentials"] is not None:
             v.api_url = v.api_url.format(workspace_id=values["credentials"].workspace_id)
         return v
 
