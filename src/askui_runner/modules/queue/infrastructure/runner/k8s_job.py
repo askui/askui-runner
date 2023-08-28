@@ -10,7 +10,9 @@ from .shared import RunnerConfigFactory
 
 
 class K8sJobRunner(Runner):
-    def __init__(self, config: K8sJobRunnerConfig, runner_config_factory: RunnerConfigFactory):
+    def __init__(
+        self, config: K8sJobRunnerConfig, runner_config_factory: RunnerConfigFactory
+    ):
         self.config = config
         self.load_k8s_config()
         self.batch_api = client.BatchV1Api()
@@ -61,7 +63,7 @@ class K8sJobRunner(Runner):
                                 image=self.config.runner_container.image,
                                 image_pull_policy="Always",
                                 command=["/bin/sh", "-c"],
-                                args=[ # TODO Is it safe to use single quotation marks inside the json?
+                                args=[  # TODO Is it safe to use single quotation marks inside the json?
                                     f"""
                                     python -m askui_runner -c '{runner_config.json()}';
                                     exit_code=$?;
@@ -74,13 +76,20 @@ class K8sJobRunner(Runner):
                                         mount_path="/opt/exit-signals",
                                         name="exit-signals",
                                     ),
+                                    client.V1VolumeMount(
+                                        name="cache-volume",
+                                        mount_path="/dev/shm",
+                                    ),
                                 ],
+                                resources=client.V1ResourceRequirements(
+                                    **self.config.runner_container.resources.dict()
+                                ),
                             ),
                             client.V1Container(
                                 name="askui-controller",
                                 image=self.config.controller_container.image,
                                 command=["/bin/sh", "-c"],
-                                args=[ 
+                                args=[
                                     # Doesn't handle pod restart --> exits immediately because of existing EXIT file
                                     """
                                     ./entrypoint.sh &
@@ -96,7 +105,14 @@ class K8sJobRunner(Runner):
                                         name="exit-signals",
                                         read_only=True,
                                     ),
-                                ]
+                                    client.V1VolumeMount(
+                                        name="cache-volume",
+                                        mount_path="/dev/shm",
+                                    ),
+                                ],
+                                resources=client.V1ResourceRequirements(
+                                    **self.config.controller_container.resources.dict()
+                                ),
                             ),
                         ],
                         image_pull_secrets=[  # TODO Remove as soon as both dockerhub repos are public or make configurable
@@ -106,7 +122,14 @@ class K8sJobRunner(Runner):
                             client.V1Volume(
                                 empty_dir=client.V1EmptyDirVolumeSource(),
                                 name="exit-signals",
-                            )
+                            ),
+                            client.V1Volume(
+                                name="cache-volume",
+                                empty_dir=client.V1EmptyDirVolumeSource(
+                                    medium="Memory",
+                                    size_limit=self.config.shared_memory,
+                                ),
+                            ),
                         ],
                     ),
                 ),

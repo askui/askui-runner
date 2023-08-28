@@ -7,13 +7,27 @@ from pydantic import BaseModel, BaseSettings, Field, validator
 from ..core.models import FeatureToggles, WorkspaceCredentials
 
 
+class ContainerResource(BaseModel):
+    cpu: str = Field(default="500m")
+    memory: str = Field(default="1Gi")
+
+
+class ContainerResources(BaseModel):
+    requests: ContainerResource = Field(default=ContainerResource())
+    limits: ContainerResource = Field(default=ContainerResource())
+
+
 class ContainerConfig(BaseModel):
     image: str
+    resources: ContainerResources = Field(default=ContainerResources())
 
 
-class K8sJobRunnerConfig(BaseModel): # TODO Adjust
+class K8sJobRunnerConfig(BaseModel):  # TODO Adjust
     namespace: str = "dev"
-    runner_container = ContainerConfig(image="askuigmbh/askui-runner:test")
+    shared_memory: str = Field(default="1Gi")
+    runner_container = ContainerConfig(
+        image="askuigmbh/askui-runner:latest",
+    )
     controller_container = ContainerConfig(
         image="askuigmbh/askui-ui-controller:v0.11.2-chrome-100.0.4896.60-amd64"
     )
@@ -111,12 +125,14 @@ class RunnerJobData(BaseModel):
     workflows_api_url: str
     inference_api_url: str
 
+
 class LogLevel(str, enum.Enum):
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
 
 class Config(
     BaseSettings
