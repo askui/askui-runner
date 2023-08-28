@@ -42,7 +42,7 @@ class Runner:
         result = RunWorkflowsResult.SUCCESS
         with tempfile.TemporaryDirectory(
             suffix="askui-runner-"
-        ) as dir_path:  # TOOD: Make configurable and move into the infrastructure layer
+        ) as dir_path:  # TODO: Make configurable and move into the infrastructure layer
             if self.enable.setup:
                 self.setup(dir_path=dir_path)
             if self.enable.download_workflows:

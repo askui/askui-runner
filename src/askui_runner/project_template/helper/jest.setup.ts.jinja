@@ -1,14 +1,12 @@
-import { UiControlClient, UiController } from 'askui';
+import { UiControlClient } from 'askui';
 import 'jest-allure-circus';
 import { AskUIAllureStepReporter } from '@askui/askui-reporters';
 
-let controller: UiController;
 let aui: UiControlClient;
 
 jest.setTimeout(60 * 1000 * 60);
 
 beforeAll(async () => {
-  controller = new UiController();
   aui = await UiControlClient.build({
     inferenceServerUrl: "{{ inference_api_url }}",
     credentials: {
@@ -32,7 +30,6 @@ afterEach(async () => {
 
 afterAll(async () => {
   aui.disconnect();
-  await uiController.stop();
 });
 
 export { aui };

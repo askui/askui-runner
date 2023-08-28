@@ -134,7 +134,7 @@ class RunnerJobsQueuePolling:
 
     def poll(self) -> None:
         while True:
-            print("Polling...")
+            print("Polling for jobs...")
             job: RunnerJob | None = self.queue.lease(filters=self.config.filters)
             if job is None:
                 self._sleep_until_next_poll_or_exit()
@@ -166,16 +166,20 @@ class RunnerJobsQueuePolling:
 
     def _fail_run(self, job: RunnerJob) -> None:
         self.runner.stop()
+        print(f"Job {job.id} failed.")
         self.queue.fail(job)
 
     def _cancel_run(self, job: RunnerJob) -> None:
         self.runner.stop()
+        print(f"Job {job.id} canceled.")
         self.queue.cancel(job)
 
     def _complete_run(self, job: RunnerJob):
         if self.runner.has_passed():
+            print(f"Job {job.id} passed.")
             self.queue.pass_(job)
             return
+        print(f"Job {job.id} failed.")
         self.queue.fail(job)
 
     def _ping(self, job: RunnerJob) -> None:

@@ -20,7 +20,6 @@ class K8sJobRunner(Runner):
         self.ttl_seconds_after_finished = 120
         # TODO Authentication
         self.runner_image = "askuigmbh/askui-runner:test"
-        self.runner_image = "busybox"
         self.controller_name = "askui-ui-controller"
         self.controller_image = (
             "askuigmbh/askui-ui-controller:v0.11.2-chrome-100.0.4896.60-amd64"
@@ -37,7 +36,7 @@ class K8sJobRunner(Runner):
             config.load_kube_config()  # TODO Does that work?
 
     def _build_k8s_job(self, runner_job: RunnerJob) -> client.V1Job:
-        # TODO Recheck recommended label values and if set correctly
+        # TODO Is job removed after ttl_seconds_after_finished?
         name = f"{self.name}-{runner_job.id}-{runner_job.tries}"
         labels = {
             "app.kubernetes.io/name": name,
@@ -64,30 +63,62 @@ class K8sJobRunner(Runner):
                 ttl_seconds_after_finished=self.ttl_seconds_after_finished,
                 template=client.V1PodTemplateSpec(
                     spec=client.V1PodSpec(
-                        restart_policy="Never",  # TODO Adjust
-                        share_process_namespace=True,
+                        restart_policy="Never",
                         containers=[
                             client.V1Container(
                                 name=self.name,
                                 image=self.runner_image,
-                                # args=["echo", "Hello World!"],
-                                args=[
-                                    "echo", # TODO Replace
-                                    # "-c",
-                                    runner_config.json(),  # TODO Check that config is correct for K8s
+                                command=["/bin/sh", "-c"],
+                                args=[ # TODO Is it safe to use single quotation marks inside the json?
+                                    f"""
+                                    python -m askui_runner -c '{runner_config.json()}';
+                                    exit_code=$?;
+                                    echo -n "$exit_code" > /opt/exit-signals/EXIT;
+                                    exit $exit_code;
+                                    """,
+                                ],
+                                volume_mounts=[
+                                    client.V1VolumeMount(
+                                        mount_path="/opt/exit-signals",
+                                        name="exit-signals",
+                                    ),
                                 ],
                             ),
-                            client.V1Container(  # TODO I have to make sure that the controller is deleted after the job is finished
+                            client.V1Container(
                                 name=self.controller_name,
                                 image=self.controller_image,
+                                command=["/bin/sh", "-c"],
+                                args=[ 
+                                    # Doesn't handle pod restart --> exits immediately because of existing EXIT file
+                                    """
+                                    ./entrypoint.sh &
+                                    while [ ! -f /opt/exit-signals/EXIT ]; do
+                                        sleep 5;
+                                    done;
+                                    exit $(cat /opt/exit-signals/EXIT);
+                                    """,
+                                ],
+                                volume_mounts=[
+                                    client.V1VolumeMount(
+                                        mount_path="/opt/exit-signals",
+                                        name="exit-signals",
+                                        read_only=True,
+                                    ),
+                                ]
                             ),
                         ],
-                        image_pull_secrets=[  # TODO Remove as soon as both dockerhub repos are public
+                        image_pull_secrets=[  # TODO Remove as soon as both dockerhub repos are public or make configurable
                             client.V1LocalObjectReference(name="docker"),
+                        ],
+                        volumes=[
+                            client.V1Volume(
+                                empty_dir=client.V1EmptyDirVolumeSource(),
+                                name="exit-signals",
+                            )
                         ],
                     ),
                 ),
-                backoff_limit=1,
+                backoff_limit=0,
                 active_deadline_seconds=runner_config.job_timeout,
             ),
         )
@@ -123,18 +154,27 @@ class K8sJobRunner(Runner):
                 namespace=self.namespace,
             )
             if not job.status:
-                raise Exception("The Kubernetes job has no status.") # TODO Wrap into general runner exception
+                raise Exception(
+                    "The Kubernetes job has no status."
+                )  # TODO Wrap into general runner exception
             return job.status
         except ApiException as exception:
             self._handle_api_exception(exception)
-            raise exception # TODO Wrap into general runner exception
+            raise exception  # TODO Wrap into general runner exception
 
     def is_running(self) -> bool:
         """
         Check if the Kubernetes job is currently running.
         """
-        return not self.has_passed() and not self.has_failed()
-        
+        try:
+            job_status = self._get_k8s_job_status()
+            return (
+                job_status.active is not None
+                and job_status.active > 0
+                and (job_status.failed is None or job_status.failed == 0)
+            )
+        except:
+            return False
 
     def has_passed(self) -> bool:
         """
@@ -142,7 +182,12 @@ class K8sJobRunner(Runner):
         """
         try:
             job_status = self._get_k8s_job_status()
-            return job_status.succeeded is not None and job_status.succeeded > 0
+            return (
+                job_status.succeeded is not None
+                and job_status.succeeded > 0
+                and (job_status.active is None or job_status.active == 0)
+                and (job_status.failed is None or job_status.failed == 0)
+            )
         except:
             return False
 
@@ -164,7 +209,7 @@ class K8sJobRunner(Runner):
             raise Exception("No Kubernetes job has been created or started yet.")
         try:
             self.batch_api.delete_namespaced_job(
-                name=self.k8s_job.metadata.name, # type: ignore
+                name=self.k8s_job.metadata.name,  # type: ignore
                 namespace=self.namespace,
             )
         except ApiException as e:
