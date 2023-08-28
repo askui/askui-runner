@@ -4,7 +4,7 @@ from kubernetes.client.rest import ApiException
 from ...domain.services import Runner, RunnerJob
 from .shared import RunnerConfigFactory
 
-NAMESPACE = "runner"
+NAMESPACE = "dev"
 LABEL_PREFIX = "askui.com"
 
 
