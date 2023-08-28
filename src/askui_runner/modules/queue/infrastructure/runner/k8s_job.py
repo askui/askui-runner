@@ -1,3 +1,4 @@
+import logging
 from importlib.metadata import version
 
 from kubernetes import client, config
@@ -18,10 +19,10 @@ class K8sJobRunner(Runner):
 
     def load_k8s_config(self) -> None:
         try:
-            print("Loading in-cluster config...")
+            logging.info("Loading in-cluster config...")
             config.load_incluster_config()
         except:  # pylint: disable=bare-except
-            print("Failed. Falling back to kube config...")
+            logging.info("Failed. Falling back to kube config...")
             config.load_kube_config()  # TODO Does that work?
 
     def _build_k8s_job(self, runner_job: RunnerJob) -> client.V1Job:
@@ -116,9 +117,9 @@ class K8sJobRunner(Runner):
 
     def _handle_api_exception(self, exception: ApiException) -> None:
         if exception.status == 404:
-            print(f"The job might not exist anymore: {exception}")
+            logging.error(f"The K8s job might not exist anymore: {exception}")
         else:
-            print(f"An unexpected error occurred: {exception}")
+            logging.error(f"An unexpected error occurred: {exception}")
 
     def _create_k8s_job(self, job: client.V1Job) -> None:
         try:

@@ -111,6 +111,12 @@ class RunnerJobData(BaseModel):
     workflows_api_url: str
     inference_api_url: str
 
+class LogLevel(str, enum.Enum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 class Config(
     BaseSettings
@@ -134,6 +140,7 @@ class Config(
     job: Optional[
         RunnerJobData
     ]  # TODO Use a discrimnated union to differentiate queue and job
+    log_level: LogLevel = Field(default=LogLevel.INFO, description="Log level")
 
     @validator("credentials", always=True)
     def validate_credentials_set_when_self_hosted(  # pylint: disable=no-self-argument

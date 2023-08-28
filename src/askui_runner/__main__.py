@@ -1,3 +1,4 @@
+import logging
 import sys
 from typing import Annotated
 
@@ -49,6 +50,7 @@ def build_runner_core_config(config: Config):
 
 
 def take_entrypoint(config: Config) -> None:
+    logging.basicConfig(level=config.log_level.value, format='%(asctime)s - %(levelname)s - %(message)s')
     match config.entrypoint:
         case EntryPoint.QUEUE:
             run_jobs_from_queue(config)

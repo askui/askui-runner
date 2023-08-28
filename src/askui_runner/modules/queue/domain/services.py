@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Optional
@@ -134,7 +135,7 @@ class RunnerJobsQueuePolling:
 
     def poll(self) -> None:
         while True:
-            print("Polling for jobs...")
+            logging.info("Polling for jobs...")
             job: RunnerJob | None = self.queue.lease(filters=self.config.filters)
             if job is None:
                 self._sleep_until_next_poll_or_exit()
@@ -144,42 +145,41 @@ class RunnerJobsQueuePolling:
 
     def _run(self, job: RunnerJob) -> None:
         try:
-            print(f"Starting job {job.id}...")
+            logging.info(f"Starting job {job.id}...")
             self.runner.start(runner_job=job)
             while self.runner.is_running():
-                print(f"Running job {job.id}...")
+                logging.info(f"Running job {job.id}...")
                 if job.should_ping(
                     now=self.clock.now(), ping_threshold=PING_THRESHOLD_IN_S
                 ):
                     self._ping(job)
                 self.clock.sleep(RUNNER_POLLING_INTERVAL_IN_S)
                 if self.has_job_timed_out():
-                    print(f"Job {job.id} timed out.")
+                    logging.info(f"Job {job.id} timed out.")
                     self._fail_run(job)
                     return
-            print(f"Job {job.id} completed.")
             self._complete_run(job)
         except PingError as error:
-            print(error)
+            logging.warning(error)
             self.runner.stop()
             return
 
     def _fail_run(self, job: RunnerJob) -> None:
         self.runner.stop()
-        print(f"Job {job.id} failed.")
+        logging.info(f"Job {job.id} failed.")
         self.queue.fail(job)
 
     def _cancel_run(self, job: RunnerJob) -> None:
         self.runner.stop()
-        print(f"Job {job.id} canceled.")
+        logging.info(f"Job {job.id} canceled.")
         self.queue.cancel(job)
 
     def _complete_run(self, job: RunnerJob):
         if self.runner.has_passed():
-            print(f"Job {job.id} passed.")
+            logging.info(f"Job {job.id} passed.")
             self.queue.pass_(job)
             return
-        print(f"Job {job.id} failed.")
+        logging.info(f"Job {job.id} failed.")
         self.queue.fail(job)
 
     def _ping(self, job: RunnerJob) -> None:

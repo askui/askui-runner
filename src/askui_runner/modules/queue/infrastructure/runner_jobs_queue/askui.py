@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 import requests
@@ -28,7 +29,7 @@ class AskUiRunnerJobsQueueService(services.RunnerJobsQueue):
                 return
             return RunnerJob(**response.json())
         except Exception as error:
-            print(error)
+            logging.error(error)
 
     def ping(self, runner_job: RunnerJob) -> RunnerJobsQueuePingResult:
         response = requests.post(
@@ -63,4 +64,4 @@ class AskUiRunnerJobsQueueService(services.RunnerJobsQueue):
                 timeout=REQUEST_TIMEOUT_IN_S,
             )
         except Exception as error:
-            print(error)
+            logging.error(error)
