@@ -25,10 +25,9 @@ class K8sJobRunner(Runner):
             config.load_incluster_config()
         except:  # pylint: disable=bare-except
             logging.info("Failed. Falling back to kube config...")
-            config.load_kube_config()  # TODO Does that work?
+            config.load_kube_config()
 
     def _build_k8s_job(self, runner_job: RunnerJob) -> client.V1Job:
-        # TODO Is job removed after ttl_seconds_after_finished?
         name = f"askui-runner-{runner_job.id}-{runner_job.tries}"
         label_prefix = "askui.com"
         labels = {
@@ -63,7 +62,7 @@ class K8sJobRunner(Runner):
                                 image=self.config.runner_container.image,
                                 image_pull_policy="Always",
                                 command=["/bin/sh", "-c"],
-                                args=[  # TODO Is it safe to use single quotation marks inside the json?
+                                args=[  # WARNING: may be unsafe if json values include single quotes
                                     f"""
                                     python -m askui_runner -c '{runner_config.json()}';
                                     exit_code=$?;
@@ -133,7 +132,7 @@ class K8sJobRunner(Runner):
                         ],
                     ),
                 ),
-                backoff_limit=0,
+                backoff_limit=1,
                 active_deadline_seconds=runner_config.job_timeout,
             ),
         )
