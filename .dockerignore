@@ -165,5 +165,5 @@ cython_debug/
 # Mac
 .DS_Store
 
-# PDM
-.pdm-python
+# Node
+**/node_modules

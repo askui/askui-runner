@@ -1,3 +1,4 @@
+import logging
 import sys
 from typing import Annotated
 
@@ -49,6 +50,7 @@ def build_runner_core_config(config: Config):
 
 
 def take_entrypoint(config: Config) -> None:
+    logging.basicConfig(level=config.log_level.value, format='%(asctime)s - %(levelname)s - %(message)s')
     match config.entrypoint:
         case EntryPoint.QUEUE:
             run_jobs_from_queue(config)
@@ -57,14 +59,14 @@ def take_entrypoint(config: Config) -> None:
 
 
 def main(
-    config_file_path: Annotated[
+    config_json_or_config_file_path: Annotated[
         str,
         typer.Option(
-            "--config", "-c", help="Path to config file (.json, .yaml, .yml supported)"
+            "--config", "-c", help="Path to config file (.json, .yaml, .yml supported) or config provided as json"
         ),
     ],
 ) -> None:
-    config = read_config(config_file_path)
+    config = read_config(config_json_or_config_file_path)
     take_entrypoint(config)
 
 
