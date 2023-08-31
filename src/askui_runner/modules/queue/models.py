@@ -98,7 +98,7 @@ class RunnerJobsQueuePollingConfig(BaseModel):
 
 class QueueConfig(BaseModel):
     api_url: str = Field(
-        "https://app-gateway-api.askui.com/dev/api/v1/workspaces/{workspace_id}/runner-jobs",  # TODO Adjust
+        "https://app-gateway-api.askui.com/prod/api/v1/workspaces/{workspace_id}/runner-jobs",  # TODO Adjust
         description="URL of the runner jobs queue API",
     )
     keep_alive: bool = Field(
