@@ -132,7 +132,7 @@ class K8sJobRunner(Runner):
                         ],
                     ),
                 ),
-                backoff_limit=1,
+                backoff_limit=0,
                 active_deadline_seconds=runner_config.job_timeout,
             ),
         )
