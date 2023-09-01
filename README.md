@@ -2,10 +2,6 @@
 
 Runner for Workflows Defined in AskUI Studio
 
-:construction: Work in Progress :construction:
-
-Currently, the scheduling on self-hosted runners is not yet possible with AskUI studio. So please, be a little more patient. We are going to let you know as soon as it is possible to schedule runs on self-hosted runners.
-
 ## Table of Contents
 
 - [Requirements](#requirements)
