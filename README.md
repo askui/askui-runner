@@ -34,6 +34,7 @@ credentials:
   access_token: <access token> # replace with your access token
 runner:
   exec: python -m askui_runner # update if your command is different
+  tags [<tag 1>, <tag 2>, ..] # replace with your own runner tags
 ```
 
 Find out about all configuration options by taking a look at the JSON schema of the configuration. You can generate an up-to-date JSON schema by running:
