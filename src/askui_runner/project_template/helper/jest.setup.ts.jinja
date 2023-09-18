@@ -1,5 +1,4 @@
 import { UiControlClient } from 'askui';
-import 'jest-allure-circus';
 import { AskUIAllureStepReporter } from '@askui/askui-reporters';
 
 let aui: UiControlClient;
@@ -13,7 +12,9 @@ beforeAll(async () => {
       workspaceId: "{{ credentials.workspace_id }}",
       token: "{{ credentials.access_token }}",
     },
-    reporter: new AskUIAllureStepReporter(),
+    reporter: new AskUIAllureStepReporter({
+      withScreenshots: 'always',
+    }),
   });
   await aui.connect();
 });
