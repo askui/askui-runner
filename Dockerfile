@@ -11,7 +11,7 @@ ARG PYTHON_VERSION
 RUN pip install -U pip setuptools wheel 
 RUN pip install pdm
 
-COPY pyproject.toml pdm.lock README.md /project/
+COPY pyproject.toml pdm.lock README.md setup.py LICENSE /project/
 COPY src/ /project/src
 
 WORKDIR /project
