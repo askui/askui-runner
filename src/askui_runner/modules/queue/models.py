@@ -21,10 +21,18 @@ class ContainerConfig(BaseModel):
     image: str
     resources: ContainerResources = Field(default=ContainerResources())
 
+class K8sToleration(BaseModel):
+    effect: str | None
+    key: str | None
+    operator: str
+    value: str | None
+    toleration_seconds: int | None
 
 class K8sJobRunnerConfig(BaseModel):  # TODO Adjust
     namespace: str = "dev"
     shared_memory: str = Field(default="1Gi")
+    tolerations: list[K8sToleration] = Field(default=[])
+    node_selector: dict[str, str] | None = Field(default=None)
     runner_container = ContainerConfig(
         image="askuigmbh/askui-runner:latest",
     )
@@ -138,24 +146,22 @@ class Config(
     BaseSettings
 ):  # TODO Move into general config or create general config to separate out job entrypoint
     entrypoint: EntryPoint = Field(
-        EntryPoint.QUEUE, description="Entry point of the runner"
+        default=EntryPoint.QUEUE, description="Entry point of the runner"
     )
     runner: RunnerConfig = Field(
-        RunnerConfig(), description="Configuration of the runner"  # type: ignore
+        default=RunnerConfig(), description="Configuration of the runner"  # type: ignore
     )
     credentials: WorkspaceCredentials | None = Field(
         description="Credentials for accessing the workspace"
     )
     queue: Optional[QueueConfig] = Field(
-        QueueConfig(), description="Configuration of the queue"  # type: ignore
+        default=QueueConfig(), description="Configuration of the queue"  # type: ignore
     )
     job_timeout: int = Field(
-        3600,
+        default=3600,
         description="Timeout in seconds for a job to be completed before it is considered failed",
     )
-    job: Optional[
-        RunnerJobData
-    ]  # TODO Use a discrimnated union to differentiate queue and job
+    job: RunnerJobData | None
     log_level: LogLevel = Field(default=LogLevel.INFO, description="Log level")
 
     @validator("credentials", always=True)

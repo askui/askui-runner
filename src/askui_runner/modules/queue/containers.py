@@ -25,7 +25,7 @@ def build_runner_config(
 ) -> Config:
     config = Config.parse_obj(config_dict)
     config.queue = None
-    config.runner.type = RunnerType.SUBPROCESS # TODO Don't mix up the queue (exec, type, job timeout) and the runner
+    config.runner.type = RunnerType.SUBPROCESS
     config.entrypoint = EntryPoint.JOB
     config.credentials = runner_job_data.credentials
     config.job = runner_job_data  # TODO Remove duplication of WorkspaceCredentials

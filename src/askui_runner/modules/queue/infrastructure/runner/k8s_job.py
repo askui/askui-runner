@@ -130,6 +130,12 @@ class K8sJobRunner(Runner):
                                 ),
                             ),
                         ],
+                        tolerations=[
+                            client.V1Toleration(
+                                **toleration.dict(),
+                            ) for toleration in self.config.tolerations
+                        ] if self.config.tolerations else None,
+                        node_selector=self.config.node_selector,
                     ),
                 ),
                 backoff_limit=0,
