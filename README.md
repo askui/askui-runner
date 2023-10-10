@@ -20,10 +20,10 @@ Runner for Workflows Defined in AskUI Studio.
 
 ## Installation
 
-We recommend using a virtual environment for Python:
+We recommend using a virtual environment for Python. Make sure `python --version` returns 3.10 or higher:
 
 ```bash
-python3 -m venv venv
+python -m venv venv
 source venv/bin/activate
 ```
 
@@ -55,17 +55,15 @@ python -m askui_runner -c <path to your config file, e.g., askui-runner.config.y
 ```
 
 ## Start UiController
-If you want to run your workflows on the same system as the Runner you need to start one that listens on port `6769`. Please download the one for your operating system and start it: [Windows](https://files.askui.com/releases/askui-ui-controller/latest/win32/x64/askui-ui-controller.exe) | [macOS(intel)](https://files.askui.com/releases/askui-ui-controller/latest/darwin/x64/askui-ui-controller.dmg) | [macOS(silicon)](https://files.askui.com/releases/askui-ui-controller/latest/darwin/arm64/askui-ui-controller.dmg) | [Linux](https://files.askui.com/releases/askui-ui-controller/latest/linux/x64/askui-ui-controller.AppImage)
+If you want to run your workflows on the same system as the runner you need to start one that listens on port `6769`. Please download the one for your operating system and start it: [Windows](https://files.askui.com/releases/askui-ui-controller/latest/win32/x64/askui-ui-controller.exe) | [macOS(intel)](https://files.askui.com/releases/askui-ui-controller/latest/darwin/x64/askui-ui-controller.dmg) | [macOS(silicon)](https://files.askui.com/releases/askui-ui-controller/latest/darwin/arm64/askui-ui-controller.dmg) | [Linux](https://files.askui.com/releases/askui-ui-controller/latest/linux/x64/askui-ui-controller.AppImage)
 
 ### Execute Workflows on a Remote System: Change UiController URL
-You can change the UiController-URL by creating a template project, e.g., using `askui init` and configuring the AskUI Runner using the `runner.project_dir` in your configuration file like this: 
+You can change the UiController-URL so the runner can talk to a UiController that runs on a remote machine or on a different port: 
 
 ```yml
 ...
-runner:
-  ...
-  project_dir: <path to project>
-``````
+TODO
+```
 
 Currently, the standard logging output of the AskUI runner is minimal - we are soon going to change that. But you should see the runner starting the running of workflows as soon as you schedule some runs through the AskUI Studio.
 
