@@ -2,7 +2,9 @@
 
 Runner for Workflows Defined in AskUI Studio.
 
-![Architecture drawing how the AskUI-Runner fits into AskUI Studio, AskUI SDK and AskUI Remote Device Controller. The AskUI-Runner fetches Workflows from AskUI Studio and uploads the results back to it. The Runner uses the AskUI SDK which passes the instructions from the workflow steps to the AskUI Remote Device Controller.](askui-runner-simple-architecture.png)
+<p align="center">
+  <img src="askui-runner-simple-architecture.png" width="80%" alt="Architecture drawing how the AskUI-Runner fits into AskUI Studio, AskUI SDK and AskUI Remote Device Controller. The AskUI-Runner fetches Workflows from AskUI Studio and uploads the results back to it. The Runner uses the AskUI SDK which passes the instructions from the workflow steps to the AskUI Remote Device Controller.">
+</p>
 
 ## Table of Contents
 
@@ -33,6 +35,8 @@ We have not yet published the AskUI Runner to PyPI. For now, you can install it 
 pip install git+https://github.com/askui/askui-runner.git
 ```
 
+Currently, the standard logging output of the AskUI runner is minimal - we are soon going to change that. But you should see the runner starting the running of workflows as soon as you schedule some runs through the AskUI Studio.
+
 ## Usage
 
 Create a configuration file (`.y{a}ml` or `.json`) in a directory of your choosing. The configuration file should contain at least some credentials and the command with which you start the runner without the config file flag:
@@ -62,10 +66,12 @@ You can change the UiController-URL so the runner can talk to a UiController tha
 
 ```yml
 ...
-TODO
+runner:
+  ...
+  controller:
+    host: "127.0.0.1"
+    port: 7000
 ```
-
-Currently, the standard logging output of the AskUI runner is minimal - we are soon going to change that. But you should see the runner starting the running of workflows as soon as you schedule some runs through the AskUI Studio.
 
 ## Generating up-to-date Configuration Schema
 
