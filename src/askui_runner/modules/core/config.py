@@ -1,5 +1,5 @@
 from . import models
 
 
-class Config(models.Config):
+class Config(models.CoreConfig):
     pass

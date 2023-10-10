@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, BaseSettings, Field, validator
 
-from ..core.models import FeatureToggles, WorkspaceCredentials
+from ..core.models import CoreConfigBase, WorkspaceCredentials
 
 
 class ContainerResource(BaseModel):
@@ -52,7 +52,7 @@ class Host(str, enum.Enum):
 
 
 class RunnerConfig(
-    BaseModel
+    CoreConfigBase
 ):  # TODO parts only relevant for a runner within queue -> move to queue or new model, e.g., registration data
     id: str = Field(
         str(uuid4()), description="ID of the runner"
@@ -72,10 +72,6 @@ class RunnerConfig(
     host: Host = Field(
         default=Host.SELF, description="Host of the runner"
     )  # only relevant for runner in queue
-    project_dir: str = Field(
-        "project_template",
-        description="Directory of the AskUi Node.js project template",
-    )
     workflows_dir: str = Field(
         "workflows",
         description="Absolute path or path relative to {project_dir} of directory where workflows are located or to be downloaded to",
@@ -84,11 +80,6 @@ class RunnerConfig(
         "results-allure",
         description="Absolute path or path relative to {project_dir} of directory where results are to be put in and to be uploaded from",
     )
-    enable: FeatureToggles = Field(
-        FeatureToggles(),  # type: ignore
-        description="Feature toggles for the runner",
-    )
-
 
 class RunnerJobsFilters(BaseModel):
     tags: list[str] = []
