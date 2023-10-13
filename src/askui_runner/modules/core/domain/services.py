@@ -3,7 +3,7 @@ import tempfile
 from abc import ABC, abstractmethod
 from typing import Any
 
-from ..models import Config, FeatureToggles
+from ..models import CoreConfig, FeatureToggles
 
 
 class WorkflowsDownload(ABC):
@@ -30,7 +30,7 @@ class Runner:
         workflows_download_service: WorkflowsDownload,
         results_upload_service: ResultsUpload,
     ) -> None:
-        self.config = Config.parse_obj(config)
+        self.config = CoreConfig.parse_obj(config)
         self.workflows_download_service = workflows_download_service
         self.results_upload_service = results_upload_service
 

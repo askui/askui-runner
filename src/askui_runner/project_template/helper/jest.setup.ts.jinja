@@ -7,6 +7,7 @@ jest.setTimeout(60 * 1000 * 60);
 
 beforeAll(async () => {
   aui = await UiControlClient.build({
+    uiControllerUrl: "http://{{ controller.host }}:{{ controller.port }}",
     inferenceServerUrl: "{{ inference_api_url }}",
     credentials: {
       workspaceId: "{{ credentials.workspace_id }}",

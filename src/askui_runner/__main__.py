@@ -6,7 +6,7 @@ import typer
 
 from .config import Config, read_config
 from .modules.core.containers import Container as CoreContainer
-from .modules.core.models import Config as CoreConfig
+from .modules.core.models import CoreConfig, ControllerConfig
 from .modules.core.models import ResultsConfig, WorkflowsConfig
 from .modules.queue.containers import Container as QueueContainer
 from .modules.queue.models import EntryPoint
@@ -33,6 +33,10 @@ def build_runner_core_config(config: Config):
             'Expected job to be defined in config because entrypoint is set to "job" but found no defnition'
         )
     return CoreConfig(
+        controller=ControllerConfig(
+            host=config.runner.controller.host,
+            port=config.runner.controller.port,
+        ),
         credentials=runner_job_data.credentials,
         enable=config.runner.enable,
         inference_api_url=runner_job_data.inference_api_url,

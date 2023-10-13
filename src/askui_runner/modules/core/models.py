@@ -28,13 +28,28 @@ class ResultsConfig(BaseModel):
     dir: str
 
 
-class Config(BaseSettings):
-    enable: FeatureToggles
-    project_dir: str
+class ControllerConfig(BaseModel):
+    host: str = Field("localhost", description="Host of the ui controller")
+    port: int = Field(6769, description="Port of the ui controller")
+
+
+class CoreConfigBase(BaseModel):
+    controller: ControllerConfig = Field(ControllerConfig())
+    project_dir: str = Field(
+        "project_template",
+        description="Directory of the AskUi Node.js project template",
+    )
+    enable: FeatureToggles = Field(
+        FeatureToggles(),  # type: ignore
+        description="Feature toggles for the runner",
+    )
+
+
+class CoreConfig(CoreConfigBase, BaseSettings):
     credentials: WorkspaceCredentials
     inference_api_url: str
     workflows: WorkflowsConfig
     results: ResultsConfig
-
+    
     class Config:
         env_prefix = "askui_runner_core_"

@@ -30,9 +30,6 @@ def copy_directory_contents(src_dir: str, dest_dir: str) -> None:
         else:
             shutil.copy2(src_path, dest_path)
 
-CONTROLLER_TARGET_PORT = 6769
-CONTROLLER_TARGET_HOST = "localhost"
-
 def is_port_open(host, port):
     """Check if a given port is open on a given host."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -43,12 +40,12 @@ def is_port_open(host, port):
         except socket.error:
             return False
 
-def wait_for_controller_to_start():
+def wait_for_controller_to_start(host: str, port: int):
     while True:
-        if is_port_open(CONTROLLER_TARGET_HOST, CONTROLLER_TARGET_PORT):
+        if is_port_open(host, port):
             break
         else:
-            logging.info(f"Waiting for controller to start on {CONTROLLER_TARGET_HOST}:{CONTROLLER_TARGET_PORT}...")
+            logging.info(f"Waiting for controller to start on {host}:{port}...")
             time.sleep(10)
 
 class AskUiJestRunnerService(Runner):
@@ -103,7 +100,10 @@ class AskUiJestRunnerService(Runner):
     def run_workflows(self) -> RunWorkflowsResult:
         # TODO Determine how this was ended based on exit code, configure jest accordingly, things in file system etc. and with what exit code runner should end --> Use that exit code to set the status
         # TODO Differentiate of failure of runner and failure of workflows and workflows not available and worklows erroneous (including not parseable)
-        wait_for_controller_to_start()
+        wait_for_controller_to_start(
+            host=self.config.controller.host,
+            port=self.config.controller.port,
+        )
         exit_code = os.system("npx jest --config jest.config.ts")
         if exit_code != 0:
             return RunWorkflowsResult.FAILURE
