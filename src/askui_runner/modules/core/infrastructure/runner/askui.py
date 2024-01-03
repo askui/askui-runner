@@ -74,20 +74,17 @@ class AskUiJestRunnerService(Runner):
 
     def render_templates(self, dir_path: str) -> None:
         jinja_env = self.create_jinja_env(dir_path=dir_path)
-        for root, _, files in os.walk(dir_path):
-            for file in files:
-                if not file.endswith(".jinja"):
-                    continue
-                template_file_path = os.path.relpath(os.path.join(root, file), dir_path)
-                target_file_path = os.path.join(
-                    root, file[:-6]
-                )  # TODO Use jinja literal for -6
-                with create_and_open(target_file_path, "w") as f:
-                    f.write(
-                        jinja_env.get_template(template_file_path).render(
-                            self.config.dict()
-                        )
+        templates = [template for template in jinja_env.list_templates() if template.endswith(".jinja")]
+        for template in templates:
+            target_file_path = os.path.join(
+                dir_path, template[:-6]
+            )  # TODO Use jinja literal for -6
+            with create_and_open(target_file_path, "w") as f:
+                f.write(
+                    jinja_env.get_template(template).render(
+                        self.config.dict()
                     )
+                )
 
     def setup(self, dir_path: str) -> None:
         self.cwd = os.getcwd()
