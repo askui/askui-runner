@@ -49,6 +49,7 @@ def wait_for_controller_to_start(host: str, port: int):
             time.sleep(10)
 
 class AskUiJestRunnerService(Runner):
+    _TEMPLATE_EXTENSION = "jinja"
     def __init__(
         self,
         config: dict[str, Any],
@@ -74,11 +75,16 @@ class AskUiJestRunnerService(Runner):
 
     def render_templates(self, dir_path: str) -> None:
         jinja_env = self.create_jinja_env(dir_path=dir_path)
-        templates = [template for template in jinja_env.list_templates() if template.endswith(".jinja")]
+        templates = [
+            template for template in jinja_env.list_templates(extensions=[AskUiJestRunnerService._TEMPLATE_EXTENSION])
+        ]
+        if len(templates) == 0:
+            raise Exception(f"No templates found to render in project template directory {self.project_dir}")
         for template in templates:
+            template_name_without_extension = template[:-(len(AskUiJestRunnerService._TEMPLATE_EXTENSION) + 1)] # +1 for the dot
             target_file_path = os.path.join(
-                dir_path, template[:-6]
-            )  # TODO Use jinja literal for -6
+                dir_path, *template_name_without_extension.split('/')
+            )
             with create_and_open(target_file_path, "w") as f:
                 f.write(
                     jinja_env.get_template(template).render(

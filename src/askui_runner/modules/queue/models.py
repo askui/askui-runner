@@ -58,7 +58,7 @@ class RunnerConfig(
         str(uuid4()), description="ID of the runner"
     )  # only relevant for runner in queue
     exec: str = Field(  # only relevant for runner in queue
-        "pdm run python -m runner",  # TODO adjust to the actual command
+        "python -m askui_runner",  # TODO adjust to the actual command
         description="Command to execute the runner",
     )
     tags: list[str] = Field(  # only relevant for runner in queue
