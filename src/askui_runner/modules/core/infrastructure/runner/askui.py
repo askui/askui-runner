@@ -75,9 +75,7 @@ class AskUiJestRunnerService(Runner):
 
     def render_templates(self, dir_path: str) -> None:
         jinja_env = self.create_jinja_env(dir_path=dir_path)
-        templates = [
-            template for template in jinja_env.list_templates(extensions=[AskUiJestRunnerService._TEMPLATE_EXTENSION])
-        ]
+        templates = jinja_env.list_templates(extensions=[AskUiJestRunnerService._TEMPLATE_EXTENSION])
         if len(templates) == 0:
             raise Exception(f"No templates found to render in project template directory {self.project_dir}")
         for template in templates:
