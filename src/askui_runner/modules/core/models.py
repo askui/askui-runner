@@ -29,7 +29,7 @@ class ResultsConfig(BaseModel):
 
 
 class ControllerConfig(BaseModel):
-    host: str = Field("localhost", description="Host of the ui controller")
+    host: str = Field("127.0.0.1", description="Host of the ui controller")
     port: int = Field(6769, description="Port of the ui controller")
 
 
