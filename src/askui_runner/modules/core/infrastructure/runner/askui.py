@@ -49,6 +49,7 @@ def wait_for_controller_to_start(host: str, port: int):
             time.sleep(10)
 
 class AskUiJestRunnerService(Runner):
+    _TEMPLATE_EXTENSION = "jinja"
     def __init__(
         self,
         config: dict[str, Any],
@@ -74,20 +75,18 @@ class AskUiJestRunnerService(Runner):
 
     def render_templates(self, dir_path: str) -> None:
         jinja_env = self.create_jinja_env(dir_path=dir_path)
-        for root, _, files in os.walk(dir_path):
-            for file in files:
-                if not file.endswith(".jinja"):
-                    continue
-                template_file_path = os.path.relpath(os.path.join(root, file), dir_path)
-                target_file_path = os.path.join(
-                    root, file[:-6]
-                )  # TODO Use jinja literal for -6
-                with create_and_open(target_file_path, "w") as f:
-                    f.write(
-                        jinja_env.get_template(template_file_path).render(
-                            self.config.dict()
-                        )
+        templates = jinja_env.list_templates(extensions=[AskUiJestRunnerService._TEMPLATE_EXTENSION])
+        for template in templates:
+            template_name_without_extension = template[:-(len(AskUiJestRunnerService._TEMPLATE_EXTENSION) + 1)] # +1 for the dot
+            target_file_path = os.path.join(
+                dir_path, *template_name_without_extension.split('/')
+            )
+            with create_and_open(target_file_path, "w") as f:
+                f.write(
+                    jinja_env.get_template(template).render(
+                        self.config.dict()
                     )
+                )
 
     def setup(self, dir_path: str) -> None:
         self.cwd = os.getcwd()
