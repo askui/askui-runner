@@ -5,6 +5,11 @@ let aui: UiControlClient;
 
 jest.setTimeout(60 * 1000 * 60);
 
+function getByteSizeInMB(str: string): number {
+    const blob = new Blob([str]);
+    return blob.size / (1024 * 1024);
+}
+
 beforeAll(async () => {
   aui = await UiControlClient.build({
     uiControllerUrl: "http://{{ controller.host }}:{{ controller.port }}",
@@ -27,7 +32,11 @@ beforeEach(async () => {
 afterEach(async () => {
   await aui.stopVideoRecording();
   const video = await aui.readVideoRecording();
-  AskUIAllureStepReporter.attachVideo(video);
+  const size = getByteSizeInMB(video);
+  if (size < 9.9) {
+    AskUIAllureStepReporter.attachVideo(video);
+  }
+  console.log(size);
 });
 
 afterAll(async () => {

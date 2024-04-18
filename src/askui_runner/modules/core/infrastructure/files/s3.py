@@ -57,9 +57,11 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
                     **self.headers,
                     **headers,
                 },
+                stream=True,
                 timeout=REQUEST_TIMEOUT_IN_S,
             )
-            if response.status_code != 200:
+            # Workaround for upload limit of 10MB
+            if response.status_code not in [200, 413]:
                 response.raise_for_status()
 
     def upload_dir(self, local_dir_path: str, remote_dir_path: str) -> None:
