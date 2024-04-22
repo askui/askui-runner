@@ -30,7 +30,7 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
     def isIgnoredError(response: requests.Response) -> bool:
         """
         Check if the response status code is an ignored error.
-        Status code 413 is ignored because it is a workaround for the upload limit of 10MB.
+        Status code 413 of the AWS API gateway, which is used to expose the S3 Rest API, is ignored because it is a workaround for the 10MB upload limit.
         """
         return response.status_code == 413
 
