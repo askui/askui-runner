@@ -6,7 +6,9 @@ let aui: UiControlClient;
 
 jest.setTimeout(60 * 1000 * 60);
 
-const AWS_API_GATEWAY_MAX_PAYLOAD_SIZE_IN_MB = 10  
+// https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html
+// Limit is set to 9.9 that also metadata can be transferred in request
+const AWS_API_GATEWAY_MAX_PAYLOAD_SIZE_IN_MB = 9.9  
 
 function getByteSizeInMB(str: string): number {
     const blob = new Blob([str]);
