@@ -6,9 +6,15 @@ let aui: UiControlClient;
 
 jest.setTimeout(60 * 1000 * 60);
 
+const AWS_API_GATEWAY_MAX_PAYLOAD_SIZE_IN_MB = 10  
+
 function getByteSizeInMB(str: string): number {
     const blob = new Blob([str]);
     return blob.size / (1024 * 1024);
+}
+
+function isVideoTooLargeToBeUploadedThroughAwsApiGateway(video: string): boolean {
+   return getByteSizeInMB(video) > AWS_API_GATEWAY_MAX_PAYLOAD_SIZE_IN_MB
 }
 
 beforeAll(async () => {
@@ -33,8 +39,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await aui.stopVideoRecording();
   const video = await aui.readVideoRecording();
-  const size = getByteSizeInMB(video);
-  if (size < 9.9) {
+  if (!isVideoTooLargeToBeUploadedThroughAwsApiGateway(video)) {
     AskUIAllureStepReporter.attachVideo(video);
   }
 });

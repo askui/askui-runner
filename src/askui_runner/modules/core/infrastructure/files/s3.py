@@ -26,6 +26,13 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
     def __init__(self, base_url: str, headers: dict[str, str]):
         self.base_url = base_url.rstrip("/") + "/"
         self.headers = headers
+    
+    def isIgnoredError(response: requests.Response) -> bool:
+        """
+        Check if the response status code is an ignored error.
+        Status code 413 is ignored because it is a workaround for the upload limit of 10MB.
+        """
+        return response.status_code == 413
 
     def build_file_url(self, remote_file_path: str) -> str:
         return urljoin(
@@ -57,12 +64,11 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
                     **self.headers,
                     **headers,
                 },
-                stream=True,
                 timeout=REQUEST_TIMEOUT_IN_S,
             )
-            # Workaround for upload limit of 10MB
-            if response.status_code not in [200, 413]:
-                response.raise_for_status()
+            if response.status_code != 200:
+                if not self.isIgnoredError(response):
+                    response.raise_for_status()
 
     def upload_dir(self, local_dir_path: str, remote_dir_path: str) -> None:
         for root, _, files in os.walk(local_dir_path):
