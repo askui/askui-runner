@@ -1,5 +1,5 @@
 import enum
-from typing import Optional
+from typing import Any, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, BaseSettings, Field, validator
@@ -123,6 +123,21 @@ class RunnerJobData(BaseModel):
     results_api_url: str  # TODO Depending on feature toggle you don't need to provide all of these with job config
     workflows_api_url: str
     inference_api_url: str
+    data: dict[str, Any] = Field(default_factory=dict)
+    
+    def dict(self, **kwargs) -> dict[str, Any]:
+        if "exclude" in kwargs and kwargs["exclude"] is not None:
+            if "data" not in kwargs["exclude"]:
+                if isinstance(kwargs["exclude"], set):
+                    kwargs["exclude"] |= {"data"}
+                else:
+                    kwargs["exclude"] |= {"data": True}
+        else:
+            kwargs["exclude"] = {"data"}
+        return {
+            **super().dict(**kwargs),
+            "data": self.data,
+        }
 
 
 class LogLevel(str, enum.Enum):
@@ -208,3 +223,5 @@ class Config(
             keep_alive=self.queue.keep_alive if self.queue else False,
             polling_interval=self.queue.polling_interval if self.queue else 30,
         )
+
+# TODO Does K8s still work?

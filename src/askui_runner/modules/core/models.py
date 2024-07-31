@@ -1,3 +1,4 @@
+from typing import Any
 from pydantic import BaseModel, BaseSettings, Field
 
 
@@ -50,6 +51,7 @@ class CoreConfig(CoreConfigBase, BaseSettings):
     inference_api_url: str
     workflows: WorkflowsConfig
     results: ResultsConfig
+    data: dict[str, Any] = Field(default_factory=dict)
     
     class Config:
         env_prefix = "askui_runner_core_"
