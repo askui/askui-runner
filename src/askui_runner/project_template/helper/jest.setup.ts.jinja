@@ -1,6 +1,7 @@
 import { UiControlClient } from 'askui';
 import { AskUIAllureStepReporter } from '@askui/askui-reporters';
 import {Blob} from 'node:buffer';
+import data from '@/data.json';
 
 let aui: UiControlClient;
 
@@ -50,4 +51,4 @@ afterAll(async () => {
   aui.disconnect();
 });
 
-export { aui };
+export { aui, data };

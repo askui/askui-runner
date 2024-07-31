@@ -50,6 +50,7 @@ def build_runner_core_config(config: Config):
             api_url=runner_job_data.results_api_url,
             dir=config.runner.results_dir,
         ),
+        data=runner_job_data.data,
     )
 
 

@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import shutil
@@ -94,6 +95,8 @@ class AskUiJestRunnerService(Runner):
         os.system("npm install")
         copy_directory_contents(src_dir=self.project_dir, dest_dir=dir_path)
         self.render_templates(dir_path=dir_path)
+        with create_and_open(os.path.join(dir_path, "data.json"), "w") as f:
+            json.dump(self.config.data, f)
         os.chdir(dir_path)
 
     def run_workflows(self) -> RunWorkflowsResult:
