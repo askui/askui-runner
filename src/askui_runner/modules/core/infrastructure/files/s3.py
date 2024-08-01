@@ -24,37 +24,38 @@ REQUEST_TIMEOUT_IN_S=60
 
 class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
     def __init__(self, base_url: str, headers: dict[str, str]):
+        self.disabled = base_url == ""
         self.base_url = base_url.rstrip("/") + "/"
         self.headers = headers
     
-    def isIgnoredError(response: requests.Response) -> bool:
+    def _should_ignore_error(self, response: requests.Response) -> bool:
         """
         Check if the response status code is an ignored error.
         Status code 413 of the AWS API gateway, which is used to expose the S3 Rest API, is ignored because it is a workaround for the 10MB upload limit.
         """
         return response.status_code == 413
 
-    def build_file_url(self, remote_file_path: str) -> str:
+    def _build_file_url(self, remote_file_path: str) -> str:
         return urljoin(
             base=self.base_url,
             url=remote_file_path,
         )
 
-    def build_upload_file_url(self, remote_file_path: str) -> str:
-        return self.build_file_url(remote_file_path)
+    def _build_upload_file_url(self, remote_file_path: str) -> str:
+        return self._build_file_url(remote_file_path)
 
-    def build_download_file_url(self, remote_file_path: str) -> str:
-        return self.build_file_url(remote_file_path)
+    def _build_download_file_url(self, remote_file_path: str) -> str:
+        return self._build_file_url(remote_file_path)
 
     @retry(
         stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True
     )  # log retry
-    def upload_file(
+    def _upload_file(
         self, local_file_path: str, remote_file_path: str
     ) -> None:  # log upload file + failure and retry
         with open(local_file_path, "rb") as f:
             iterator = StreamingIterator(os.path.getsize(local_file_path), f)
-            url = self.build_upload_file_url(remote_file_path)
+            url = self._build_upload_file_url(remote_file_path)
             mimetype = get_mimetype(local_file_path)
             headers = {"Content-Type": mimetype} if mimetype else {}
             response = requests.put(
@@ -67,10 +68,10 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
                 timeout=REQUEST_TIMEOUT_IN_S,
             )
             if response.status_code != 200:
-                if not self.isIgnoredError(response):
+                if not self._should_ignore_error(response):
                     response.raise_for_status()
 
-    def upload_dir(self, local_dir_path: str, remote_dir_path: str) -> None:
+    def _upload_dir(self, local_dir_path: str, remote_dir_path: str) -> None:
         for root, _, files in os.walk(local_dir_path):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -78,22 +79,24 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
                 remote_file_path = f"{remote_dir_path}/" "/".join(
                     relative_file_path.split(os.sep)
                 )
-                self.upload_file(file_path, remote_file_path)
+                self._upload_file(file_path, remote_file_path)
 
     def upload(self, local_path: str, remote_dir_path: str = "") -> None:
+        if self.disabled:
+            return
         r_dir_path = remote_dir_path.rstrip("/")
         if os.path.isdir(local_path):
-            self.upload_dir(local_path, r_dir_path)
+            self._upload_dir(local_path, r_dir_path)
         else:
-            self.upload_file(local_path, f"{r_dir_path}/{os.path.basename(local_path)}")
+            self._upload_file(local_path, f"{r_dir_path}/{os.path.basename(local_path)}")
 
     @retry(
         stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True
     )  # log retry
-    def download_file(
+    def _download_file(
         self, remote_file_path: str, local_file_path: str
     ) -> None:  # log download file
-        url = self.build_download_file_url(remote_file_path)
+        url = self._build_download_file_url(remote_file_path)
         response = requests.get(
             url,
             headers=self.headers,
@@ -107,7 +110,7 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
                 if chunk:
                     f.write(chunk)
 
-    def map_list_objects_response(self, content: bytes) -> ListObjectsResponse:
+    def _map_list_objects_response(self, content: bytes) -> ListObjectsResponse:
         list_response_element = ElementTree.fromstring(content)
         return ListObjectsResponse(
             contents=[
@@ -126,7 +129,7 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
         )
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True)
-    def list_objects(
+    def _list_objects(
         self, prefix: str, continuation_token: str | None = None
     ) -> ListObjectsResponse:
         params = {"list-type": "2", "prefix": prefix}
@@ -136,13 +139,15 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
         response = requests.get(list_url, headers=self.headers, timeout=REQUEST_TIMEOUT_IN_S)
         if response.status_code != 200:
             response.raise_for_status()
-        return self.map_list_objects_response(response.content)
+        return self._map_list_objects_response(response.content)
 
     def download(self, local_dir_path: str, remote_path: str = "") -> None:
+        if self.disabled:
+            return
         continuation_token = None
         prefix = remote_path.strip("/")
         while True:
-            list_objects_response = self.list_objects(prefix, continuation_token)
+            list_objects_response = self._list_objects(prefix, continuation_token)
             for content in list_objects_response.contents:
                 relative_remote_path = (
                     content.key.split("/")[-1]
@@ -153,7 +158,7 @@ class S3RestApiFilesService(FilesUploadService, FilesDownloadService):
                     local_dir_path, *relative_remote_path.split("/")
                 )
                 os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
-                self.download_file(content.key, local_file_path)
+                self._download_file(content.key, local_file_path)
             continuation_token = list_objects_response.continuation_token
             if continuation_token is None:
                 break

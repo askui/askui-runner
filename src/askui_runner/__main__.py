@@ -6,7 +6,7 @@ import typer
 
 from .config import Config, read_config
 from .modules.core.containers import Container as CoreContainer
-from .modules.core.models import CoreConfig, ControllerConfig
+from .modules.core.models import CoreConfig, ControllerConfig, ScheduleResultsConfig
 from .modules.core.models import ResultsConfig, WorkflowsConfig
 from .modules.queue.containers import Container as QueueContainer
 from .modules.queue.models import EntryPoint
@@ -49,6 +49,10 @@ def build_runner_core_config(config: Config):
         results=ResultsConfig(
             api_url=runner_job_data.results_api_url,
             dir=config.runner.results_dir,
+        ),
+        schedule_results=ScheduleResultsConfig(
+            api_url=runner_job_data.schedule_results_api_url or '',
+            dir=config.runner.schedule_results_dir,
         ),
         data=runner_job_data.data,
     )

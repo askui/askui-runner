@@ -80,6 +80,10 @@ class RunnerConfig(
         "results-allure",
         description="Absolute path or path relative to {project_dir} of directory where results are to be put in and to be uploaded from",
     )
+    schedule_results_dir: str = Field(
+        "results",
+        description="Absolute path or path relative to {project_dir} of directory where schedule results are to be put in and to be uploaded from",
+    )
 
 class RunnerJobsFilters(BaseModel):
     tags: list[str] = []
@@ -120,6 +124,7 @@ class EntryPoint(str, enum.Enum):
 class RunnerJobData(BaseModel):
     credentials: WorkspaceCredentials
     workflows: list[str]  # TODO Make easier to use by prefixing with our general prefix
+    schedule_results_api_url: str | None = Field(None)
     results_api_url: str  # TODO Depending on feature toggle you don't need to provide all of these with job config
     workflows_api_url: str
     inference_api_url: str

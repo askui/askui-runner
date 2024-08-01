@@ -29,13 +29,17 @@ class ResultsConfig(BaseModel):
     dir: str
 
 
+class ScheduleResultsConfig(ResultsConfig):
+    pass
+
+
 class ControllerConfig(BaseModel):
     host: str = Field("127.0.0.1", description="Host of the ui controller")
     port: int = Field(6769, description="Port of the ui controller")
 
 
 class CoreConfigBase(BaseModel):
-    controller: ControllerConfig = Field(ControllerConfig())
+    controller: ControllerConfig = Field(default_factory=ControllerConfig)
     project_dir: str = Field(
         "project_template",
         description="Directory of the AskUi Node.js project template",
@@ -51,6 +55,7 @@ class CoreConfig(CoreConfigBase, BaseSettings):
     inference_api_url: str
     workflows: WorkflowsConfig
     results: ResultsConfig
+    schedule_results: ScheduleResultsConfig | None
     data: dict[str, Any] = Field(default_factory=dict)
     
     class Config:
