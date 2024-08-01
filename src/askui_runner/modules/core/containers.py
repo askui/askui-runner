@@ -3,7 +3,7 @@ from dependency_injector import containers, providers
 from .application import services as application_services
 from .infrastructure.askui import AskUiAccessToken
 from .infrastructure.files.askui import AskUiFilesService
-from .infrastructure.results_upload.askui import AskUiResultsUploadService
+from .infrastructure.results_upload.askui import AskUiResultsUploadService, ChainedResultsUploadService
 from .infrastructure.runner.askui import AskUiJestRunnerService
 from .infrastructure.workflows_download.askui import AskUiWorkflowsDownloadService
 
@@ -36,11 +36,27 @@ class Container(containers.DeclarativeContainer):
         ),
         results_dir=config.results.dir,
     )
+    schedule_results_upload_service = providers.Singleton(
+        AskUiResultsUploadService,
+        files_upload_service=providers.Singleton(
+            AskUiFilesService,
+            base_url=config.schedule_results.api_url,
+            headers=base_http_headers,
+        ),
+        results_dir=config.schedule_results.dir,
+    )
+    chained_results_upload_service = providers.Singleton(
+        ChainedResultsUploadService,
+        services=providers.List(
+            results_upload_service,
+            schedule_results_upload_service,
+        ),
+    )
     runner_domain_service = providers.Singleton(
         AskUiJestRunnerService,
         config=config,
         workflows_download_service=workflows_download_service,
-        results_upload_service=results_upload_service,
+        results_upload_service=chained_results_upload_service,
     )
     runner_application_service = providers.Singleton(
         application_services.Runner,

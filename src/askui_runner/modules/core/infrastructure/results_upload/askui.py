@@ -19,3 +19,12 @@ class AskUiResultsUploadService(services.ResultsUpload):
                 local_path=self.results_dir,
                 remote_dir_path="",
             )
+
+
+class ChainedResultsUploadService(services.ResultsUpload):
+    def __init__(self, services: list[services.ResultsUpload]) -> None:
+        self.services = services
+
+    def upload(self) -> None:
+        for service in self.services:
+            service.upload()
