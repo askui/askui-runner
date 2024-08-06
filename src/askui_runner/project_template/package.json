@@ -3,22 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "@askui/askui-reporters": "^1.3.1",
-    "@askui/jest-allure-circus": "^1.0.22",
-    "@types/jest": "^29.5.11",
-    "askui": "^0.12.2",
-    "eslint": "^8.56.0",
+    "@askui/askui-reporters": "^2.1.0",
+    "@askui/jest-allure-circus": "^1.0.23",
+    "@types/jest": "^29.5.12",
+    "askui": "^0.20.7",
     "hpagent": "^1.2.0",
     "jest": "^29.7.0",
-    "ts-jest": "^29.1.1",
+    "ts-jest": "^29.2.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.5.4"
   }
 }
