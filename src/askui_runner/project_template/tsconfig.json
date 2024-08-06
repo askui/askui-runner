@@ -1,12 +1,15 @@
 {
     "compilerOptions": {
         "baseUrl": ".",
+        "module": "CommonJS",
+        "moduleResolution": "node",
         "paths": {
             "@/*": [
                 "./*"
             ]
         },
         "esModuleInterop": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "sourceMap": true
     }
 }
