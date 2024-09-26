@@ -41,8 +41,8 @@ class Runner:
     def run(self) -> RunWorkflowsResult:
         result = RunWorkflowsResult.SUCCESS
         with tempfile.TemporaryDirectory(
-            suffix="askui-runner-"
-        ) as dir_path:  # TODO: Make configurable and move into the infrastructure layer
+            suffix="askui-runner-",
+        ) as dir_path:
             if self.enable.setup:
                 self.setup(dir_path=dir_path)
             if self.enable.download_workflows:

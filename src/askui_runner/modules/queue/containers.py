@@ -28,7 +28,7 @@ def build_runner_config(
     config.runner.type = RunnerType.SUBPROCESS
     config.entrypoint = EntryPoint.JOB
     config.credentials = runner_job_data.credentials
-    config.job = runner_job_data  # TODO Remove duplication of WorkspaceCredentials
+    config.job = runner_job_data
     return config
 
 

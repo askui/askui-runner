@@ -9,7 +9,7 @@ from ...domain.services import RunnerJob
 from .shared import RunnerConfigFactory
 
 
-def stop(process: subprocess.Popen[bytes], timeout: int = 30) -> None: # TODO Test!
+def stop(process: subprocess.Popen[bytes], timeout: int = 30) -> None:
     try:
         process.terminate()
         process.wait(timeout=timeout)
