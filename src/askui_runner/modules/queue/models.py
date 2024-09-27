@@ -28,7 +28,7 @@ class K8sToleration(BaseModel):
     value: str | None
     toleration_seconds: int | None
 
-class K8sJobRunnerConfig(BaseModel):  # TODO Adjust
+class K8sJobRunnerConfig(BaseModel):
     namespace: str = "dev"
     shared_memory: str = Field(default="1Gi")
     tolerations: list[K8sToleration] = Field(default=[])
@@ -53,7 +53,7 @@ class Host(str, enum.Enum):
 
 class RunnerConfig(
     CoreConfigBase
-):  # TODO parts only relevant for a runner within queue -> move to queue or new model, e.g., registration data
+):
     id: str = Field(
         str(uuid4()), description="ID of the runner"
     )  # only relevant for runner in queue
@@ -101,7 +101,7 @@ class RunnerJobsQueuePollingConfig(BaseModel):
 
 class QueueConfig(BaseModel):
     api_url: str = Field(
-        "https://app-gateway-api.askui.com/prod/api/v1/workspaces/{workspace_id}/runner-jobs",  # TODO Adjust
+        "https://app-gateway-api.askui.com/prod/api/v1/workspaces/{workspace_id}/runner-jobs",
         description="URL of the runner jobs queue API",
     )
     keep_alive: bool = Field(
@@ -123,9 +123,9 @@ class EntryPoint(str, enum.Enum):
 
 class RunnerJobData(BaseModel):
     credentials: WorkspaceCredentials
-    workflows: list[str]  # TODO Make easier to use by prefixing with our general prefix
+    workflows: list[str]
     schedule_results_api_url: str | None = Field(None)
-    results_api_url: str  # TODO Depending on feature toggle you don't need to provide all of these with job config
+    results_api_url: str
     workflows_api_url: str
     inference_api_url: str
     data: dict[str, Any] = Field(default_factory=dict)
@@ -155,7 +155,7 @@ class LogLevel(str, enum.Enum):
 
 class Config(
     BaseSettings
-):  # TODO Move into general config or create general config to separate out job entrypoint
+):
     entrypoint: EntryPoint = Field(
         default=EntryPoint.QUEUE, description="Entry point of the runner"
     )
@@ -228,5 +228,3 @@ class Config(
             keep_alive=self.queue.keep_alive if self.queue else False,
             polling_interval=self.queue.polling_interval if self.queue else 30,
         )
-
-# TODO Does K8s still work?

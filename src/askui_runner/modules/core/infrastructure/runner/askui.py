@@ -67,7 +67,7 @@ class AskUiJestRunnerService(Runner):
         str
     ):
         entrypoint_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-        return os.path.join(entrypoint_dir, self.config.project_dir) # TODO Rename project_dir to project_template_dir
+        return os.path.join(entrypoint_dir, self.config.project_dir)
 
     def create_jinja_env(self, dir_path: str) -> jinja2.Environment:
         return jinja2.Environment(
@@ -100,8 +100,6 @@ class AskUiJestRunnerService(Runner):
         os.chdir(dir_path)
 
     def run_workflows(self) -> RunWorkflowsResult:
-        # TODO Determine how this was ended based on exit code, configure jest accordingly, things in file system etc. and with what exit code runner should end --> Use that exit code to set the status
-        # TODO Differentiate of failure of runner and failure of workflows and workflows not available and worklows erroneous (including not parseable)
         wait_for_controller_to_start(
             host=self.config.controller.host,
             port=self.config.controller.port,

@@ -3,10 +3,12 @@
 
 [metadata]
 groups = ["default", "dev"]
-cross_platform = true
-static_urls = false
-lock_version = "4.3"
-content_hash = "sha256:a9ded8754ccc4703d66f70d222611d88407015b4ee68050577917b13feab1ef3"
+strategy = []
+lock_version = "4.5.0"
+content_hash = "sha256:b8406791bb4fa1e20010cce8029c96cd2120f4f7a216fe4ed765b8d967815f8c"
+
+[[metadata.targets]]
+requires_python = ">=3.10"
 
 [[package]]
 name = "cachetools"
@@ -75,6 +77,7 @@ requires_python = ">=3.7"
 summary = "Composable command line interface toolkit"
 dependencies = [
     "colorama; platform_system == \"Windows\"",
+    "importlib-metadata; python_version < \"3.8\"",
 ]
 files = [
     {file = "click-8.1.7-py3-none-any.whl", hash = "sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28"},
@@ -255,6 +258,7 @@ summary = "Kubernetes python client"
 dependencies = [
     "certifi>=14.05.14",
     "google-auth>=1.0.1",
+    "ipaddress>=1.0.17; python_version == \"2.7\"",
     "python-dateutil>=2.5.3",
     "pyyaml>=5.4.1",
     "requests",
@@ -478,6 +482,7 @@ summary = "Render rich text, tables, progress bars, syntax highlighting, markdow
 dependencies = [
     "markdown-it-py>=2.2.0",
     "pygments<3.0.0,>=2.13.0",
+    "typing-extensions<5.0,>=4.0.0; python_version < \"3.9\"",
 ]
 files = [
     {file = "rich-13.5.2-py3-none-any.whl", hash = "sha256:146a90b3b6b47cac4a73c12866a499e9817426423f57c5a66949c086191a8808"},

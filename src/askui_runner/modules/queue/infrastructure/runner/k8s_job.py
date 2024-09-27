@@ -40,8 +40,6 @@ class K8sJobRunner(Runner):
             f"{label_prefix}/runner-job-id": runner_job.id,
             f"{label_prefix}/workspace-id": runner_job.data.credentials.workspace_id,
             f"{label_prefix}/runner-id": runner_job.runner_id,
-            # TODO Add run id and schedule id
-            # TODO Add tags, host, etc.
         }
         runner_config = self.runner_config_factory(runner_job_data=runner_job.data)
         return client.V1Job(
@@ -114,7 +112,7 @@ class K8sJobRunner(Runner):
                                 ),
                             ),
                         ],
-                        image_pull_secrets=[  # TODO Remove as soon as both dockerhub repos are public or make configurable
+                        image_pull_secrets=[
                             client.V1LocalObjectReference(name="docker"),
                         ],
                         volumes=[
@@ -176,11 +174,11 @@ class K8sJobRunner(Runner):
             if not job.status:
                 raise Exception(
                     "The Kubernetes job has no status."
-                )  # TODO Wrap into general runner exception
+                ) 
             return job.status
         except ApiException as exception:
             self._handle_api_exception(exception)
-            raise exception  # TODO Wrap into general runner exception
+            raise exception
 
     def is_running(self) -> bool:
         """
