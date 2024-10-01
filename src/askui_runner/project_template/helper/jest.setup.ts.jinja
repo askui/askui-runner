@@ -7,17 +7,15 @@ let aui: UiControlClient;
 
 jest.setTimeout(60 * 1000 * 60);
 
-// https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html
-// Limit is set to 9.9 instead of 10 to account for metadata (not part of file / request body) that is also transferred with request
-const AWS_API_GATEWAY_MAX_PAYLOAD_SIZE_IN_MB = 9.9  
+const UPLOAD_API_MAX_PAYLOAD_SIZE_IN_MB = 5 * 1024   
 
 function getByteSizeInMB(str: string): number {
     const blob = new Blob([str]);
     return blob.size / (1024 * 1024);
 }
 
-function isVideoTooLargeToBeUploadedThroughAwsApiGateway(video: string): boolean {
-   return getByteSizeInMB(video) > AWS_API_GATEWAY_MAX_PAYLOAD_SIZE_IN_MB
+function isVideoTooLargeForUploadApi(video: string): boolean {
+   return getByteSizeInMB(video) >= UPLOAD_API_MAX_PAYLOAD_SIZE_IN_MB
 }
 
 beforeAll(async () => {
@@ -42,7 +40,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await aui.stopVideoRecording();
   const video = await aui.readVideoRecording();
-  if (!isVideoTooLargeToBeUploadedThroughAwsApiGateway(video)) {
+  if (!isVideoTooLargeForUploadApi(video)) {
     AskUIAllureStepReporter.attachVideo(video);
   }
 });

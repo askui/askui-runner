@@ -142,7 +142,7 @@ class TestK8sJobRunner(unittest.TestCase):
                         '"access_token": '
                         '"test_access_token"}, '
                         '"queue": {"api_url": '
-                        '"https://app-gateway-api.askui.com/prod/api/v1/workspaces/test_workspace_id/runner-jobs", '
+                        '"https://workspaces.askui.com/api/v1/workspaces/test_workspace_id/runner-jobs", '
                         '"keep_alive": true, '
                         '"polling_interval": '
                         "30, "
