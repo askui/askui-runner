@@ -13,7 +13,6 @@ from .infrastructure.system.sys import SysSystem
 from .models import (
     Config,
     EntryPoint,
-    Host,
     K8sJobRunnerConfig,
     RunnerJobData,
     RunnerType,
@@ -27,24 +26,15 @@ def build_runner_config(
     config.queue = None
     config.runner.type = RunnerType.SUBPROCESS
     config.entrypoint = EntryPoint.JOB
-    config.credentials = runner_job_data.credentials
     config.job = runner_job_data
     return config
 
 
 class Container(containers.DeclarativeContainer):
     config = providers.Configuration()
-    access_token = providers.Selector(
-        config.runner.host,
-        **{
-            Host.SELF: providers.Factory(
-                AskUiAccessToken,
-                access_token=config.credentials.access_token,
-            ),
-            Host.ASKUI: providers.Factory(
-                AskUiAccessToken,
-            ),
-        },
+    access_token = providers.Factory(
+        AskUiAccessToken,
+        access_token=config.queue.credentials.access_token,
     )
     runner_jobs_queue_service = providers.Singleton(
         AskUiRunnerJobsQueueService,

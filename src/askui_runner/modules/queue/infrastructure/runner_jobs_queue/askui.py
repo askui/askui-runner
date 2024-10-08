@@ -25,11 +25,12 @@ class AskUiRunnerJobsQueueService(services.RunnerJobsQueue):
             )
             if response.status_code != 200:
                 response.raise_for_status()
-            if response.json() is None:
-                return
-            return RunnerJob(**response.json())
+            json = response.json()
+            if json:
+                return RunnerJob(**json)
         except Exception as error:
             logging.error(error)
+        return None
 
     def ping(self, runner_job: RunnerJob) -> RunnerJobsQueuePingResult:
         response = requests.post(

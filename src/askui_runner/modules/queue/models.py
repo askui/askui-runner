@@ -61,6 +61,7 @@ class RunnerConfig(
         "python -m askui_runner", 
         description="Command to execute the runner",
     )
+    workspace_id: Optional[str] = Field(None, description="ID of the workspace to run jobs for")
     tags: list[str] = Field(  # only relevant for runner in queue
         [],
         description="Tags to filter jobs by, i.e., only picks jobs from schedules with matching tags",
@@ -99,9 +100,16 @@ class RunnerJobsQueuePollingConfig(BaseModel):
     polling_interval: int
 
 
+class Credentials(BaseModel):
+    access_token: str = Field(
+        ...,
+        description="Access token for authenticating and authorizing",
+    )
+
+
 class QueueConfig(BaseModel):
     api_url: str = Field(
-        "https://workspaces.askui.com/api/v1/workspaces/{workspace_id}/runner-jobs",
+        "https://workspaces.askui.com/api/v1/runner-jobs",
         description="URL of the runner jobs queue API",
     )
     keep_alive: bool = Field(
@@ -113,6 +121,9 @@ class QueueConfig(BaseModel):
     )
     k8s_job_runner: K8sJobRunnerConfig = Field(
         K8sJobRunnerConfig(), description="Configuration of the Kubernetes runner"
+    )
+    credentials: Credentials = Field(
+        description="Credentials for interacting with the queue api"
     )
 
 
@@ -162,11 +173,8 @@ class Config(
     runner: RunnerConfig = Field(
         default=RunnerConfig(), description="Configuration of the runner"  # type: ignore
     )
-    credentials: WorkspaceCredentials | None = Field(
-        description="Credentials for accessing the workspace"
-    )
     queue: Optional[QueueConfig] = Field(
-        default=QueueConfig(), description="Configuration of the queue"  # type: ignore
+        description="Configuration of the queue"  # type: ignore
     )
     job_timeout: int = Field(
         default=3600,
@@ -174,16 +182,6 @@ class Config(
     )
     job: RunnerJobData | None
     log_level: LogLevel = Field(default=LogLevel.INFO, description="Log level")
-
-    @validator("credentials", always=True)
-    def validate_credentials_set_when_self_hosted(  # pylint: disable=no-self-argument
-        cls,
-        v: Optional[WorkspaceCredentials],
-        values,
-    ) -> Optional[WorkspaceCredentials]:
-        if v is None and values["runner"].host == Host.SELF:
-            raise ValueError('Credentials must be given when runner is "self"-hosted')
-        return v
 
     @validator("queue", always=True)
     def validate_queue_set_when_set_as_entrypoint(  # pylint: disable=no-self-argument
@@ -194,10 +192,6 @@ class Config(
         if v is None and values["entrypoint"] == EntryPoint.QUEUE:
             raise ValueError(
                 'Queue configuration must be given when entrypoint is "queue"'
-            )
-        if v is not None and values["credentials"] is not None:
-            v.api_url = v.api_url.format(
-                workspace_id=values["credentials"].workspace_id
             )
         return v
 
@@ -220,9 +214,7 @@ class Config(
                 tags=self.runner.tags,
                 runner_host=self.runner.host,
                 runner_id=self.runner.id,
-                workspace_id=self.credentials.workspace_id
-                if self.credentials
-                else None,
+                workspace_id=self.runner.workspace_id,
             ),
             job_timeout=self.job_timeout,
             keep_alive=self.queue.keep_alive if self.queue else False,
