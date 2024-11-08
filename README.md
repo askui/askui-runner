@@ -42,12 +42,14 @@ Currently, the standard logging output of the AskUI runner is minimal - we are s
 Create a configuration file (`.y{a}ml` or `.json`) in a directory of your choosing. The configuration file should contain at least some credentials and the command with which you start the runner without the config file flag:
 
 ```yml
-credentials:
-  workspace_id: <workspace id> # replace with your workspace id
-  access_token: <access token> # replace with your access token
 runner:
   exec: python -m askui_runner # update if your command is different
   tags: [<tag 1>, <tag 2>, ..] # replace with your own runner tags
+queue:
+  api_url: https://workspaces.askui.com/api/v1/runner-jobs
+  credentials:
+    workspace_id: <workspace id> # replace with your workspace id
+    access_token: <access token> # replace with your access token
 ```
 
 See [Generating up-to-date Configuration Schema](#generating-up-to-date-configuration-schema)
