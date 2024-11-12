@@ -43,7 +43,7 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService):
     ) -> None:
         with open(local_file_path, "rb") as f:
             url = urljoin(
-                base=self.base_url,
+                base=self.base_url + "/",
                 url=remote_file_path,
             )
             with requests.put(
