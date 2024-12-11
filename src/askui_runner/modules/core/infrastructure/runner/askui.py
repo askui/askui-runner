@@ -51,6 +51,7 @@ def wait_for_controller_to_start(host: str, port: int):
 
 class AskUiJestRunnerService(Runner):
     _TEMPLATE_EXTENSION = "jinja"
+
     def __init__(
         self,
         config: dict[str, Any],
@@ -69,13 +70,13 @@ class AskUiJestRunnerService(Runner):
         entrypoint_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
         return os.path.join(entrypoint_dir, self.config.project_dir)
 
-    def create_jinja_env(self, dir_path: str) -> jinja2.Environment:
+    def _create_jinja_env(self, dir_path: str) -> jinja2.Environment:
         return jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath=dir_path),
         )
 
-    def render_templates(self, dir_path: str) -> None:
-        jinja_env = self.create_jinja_env(dir_path=dir_path)
+    def _render_templates(self, dir_path: str) -> None:
+        jinja_env = self._create_jinja_env(dir_path=dir_path)
         templates = jinja_env.list_templates(extensions=[AskUiJestRunnerService._TEMPLATE_EXTENSION])
         for template in templates:
             template_name_without_extension = template[:-(len(AskUiJestRunnerService._TEMPLATE_EXTENSION) + 1)] # +1 for the dot
@@ -94,17 +95,57 @@ class AskUiJestRunnerService(Runner):
         os.chdir(self.project_dir)
         os.system("npm install")
         copy_directory_contents(src_dir=self.project_dir, dest_dir=dir_path)
-        self.render_templates(dir_path=dir_path)
+        self._render_templates(dir_path=dir_path)
         with create_and_open(os.path.join(dir_path, "data.json"), "w") as f:
             json.dump(self.config.data, f)
         os.chdir(dir_path)
 
     def run_workflows(self) -> RunWorkflowsResult:
-        wait_for_controller_to_start(
-            host=self.config.controller.host,
-            port=self.config.controller.port,
-        )
-        exit_code = os.system("npx jest --config jest.config.ts")
+        if self.config.enable.wait_for_controller:
+            wait_for_controller_to_start(
+                host=self.config.controller.host,
+                port=self.config.controller.port,
+            )
+        exit_code = os.system(self.config.command)
+        if exit_code != 0:
+            return RunWorkflowsResult.FAILURE
+        return RunWorkflowsResult.SUCCESS
+
+    def teardown(self) -> None:
+        if self.cwd is not None:
+            os.chdir(self.cwd)
+
+
+class AskUiPythonRunnerService(Runner):
+    def __init__(
+        self,
+        config: dict[str, Any],
+        workflows_download_service: WorkflowsDownload,
+        results_upload_service: ResultsUpload,
+    ) -> None:
+        super().__init__(config, workflows_download_service, results_upload_service)
+        self.cwd: Optional[str] = None
+
+    @property
+    def _project_dir(self) -> str:
+        entrypoint_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        return os.path.join(entrypoint_dir, self.config.project_dir)
+
+    def setup(self, dir_path: str) -> None:
+        self.cwd = os.getcwd()
+        os.chdir(self._project_dir)
+        copy_directory_contents(src_dir=self._project_dir, dest_dir=dir_path)
+        for key, value in self.config.data.items():
+            os.environ[key.upper()] = json.dumps(value) if not isinstance(value, str) else value
+        os.chdir(dir_path)
+
+    def run_workflows(self) -> RunWorkflowsResult:
+        if self.config.enable.wait_for_controller:
+            wait_for_controller_to_start(
+                host=self.config.controller.host,
+                port=self.config.controller.port,
+            )
+        exit_code = os.system(self.config.command)
         if exit_code != 0:
             return RunWorkflowsResult.FAILURE
         return RunWorkflowsResult.SUCCESS

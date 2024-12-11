@@ -33,6 +33,8 @@ def build_runner_core_config(config: Config):
             'Expected job to be defined in config because entrypoint is set to "job" but found no defnition'
         )
     return CoreConfig(
+        command=config.runner.command,
+        project_type=config.runner.project_type,
         controller=ControllerConfig(
             host=config.runner.controller.host,
             port=config.runner.controller.port,

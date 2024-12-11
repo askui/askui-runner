@@ -1,4 +1,5 @@
-from typing import Any
+import enum
+from typing import Any, Literal
 from pydantic import BaseModel, BaseSettings, Field
 
 
@@ -8,6 +9,7 @@ class FeatureToggles(BaseModel):
     run_workflows: bool = Field(True, description="Whether to run workflows")
     upload_results: bool = Field(True, description="Whether to upload results")
     teardown: bool = Field(True, description="Whether to run teardown project")
+    wait_for_controller: bool = Field(True, description="Whether to wait for the controller to start")
 
 
 class WorkspaceCredentials(BaseModel):
@@ -20,7 +22,7 @@ class WorkspaceCredentials(BaseModel):
 
 class WorkflowsConfig(BaseModel):
     api_url: str
-    prefixes: list[str]
+    prefixes: list[str] | None = Field(None)
     dir: str
 
 
@@ -40,6 +42,11 @@ class ControllerConfig(BaseModel):
 
 class CoreConfigBase(BaseModel):
     controller: ControllerConfig = Field(default_factory=ControllerConfig)
+    project_type: Literal["jest", "python"] = Field("jest", description="Type of the runner")
+    command: str = Field(
+        "npx jest --config jest.config.ts",
+        description="Command to run the workflows",
+    )
     project_dir: str = Field(
         "project_template",
         description="Directory of the AskUi Node.js project template",
