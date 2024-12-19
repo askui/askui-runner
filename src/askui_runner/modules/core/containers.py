@@ -1,10 +1,9 @@
 from dependency_injector import containers, providers
 
-from .application import services as application_services
 from .infrastructure.askui import AskUiAccessToken
 from .infrastructure.files.askui import AskUiFilesService
 from .infrastructure.results_upload.askui import AskUiResultsUploadService, ChainedResultsUploadService
-from .infrastructure.runner.askui import AskUiJestRunnerService
+from .infrastructure.runner.askui import AskUIJestRunner, AskUIVisionAgentExperimentsRunner
 from .infrastructure.workflows_download.askui import AskUiWorkflowsDownloadService
 
 
@@ -52,13 +51,16 @@ class Container(containers.DeclarativeContainer):
             schedule_results_upload_service,
         ),
     )
-    runner_domain_service = providers.Singleton(
-        AskUiJestRunnerService,
-        config=config,
-        workflows_download_service=workflows_download_service,
-        results_upload_service=chained_results_upload_service,
-    )
-    runner_application_service = providers.Singleton(
-        application_services.Runner,
-        runner=runner_domain_service,
+    runner = providers.Selector(
+        config.runner_type,
+        askui_jest_runner=providers.Singleton(
+            AskUIJestRunner,
+            config=config,
+            workflows_download_service=workflows_download_service,
+            results_upload_service=chained_results_upload_service,
+        ),
+        askui_vision_agent_experiments_runner=providers.Singleton(
+            AskUIVisionAgentExperimentsRunner,
+            config=config,
+        ),
     )

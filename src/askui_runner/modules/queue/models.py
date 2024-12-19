@@ -134,7 +134,7 @@ class EntryPoint(str, enum.Enum):
 
 class RunnerJobData(BaseModel):
     credentials: WorkspaceCredentials
-    workflows: list[str]
+    workflows: list[str] | None = Field(None)
     schedule_results_api_url: str | None = Field(None)
     results_api_url: str
     workflows_api_url: str
