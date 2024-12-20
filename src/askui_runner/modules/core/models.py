@@ -1,5 +1,6 @@
 from typing import Any, Literal
-from pydantic import BaseModel, BaseSettings, Field
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class FeatureToggles(BaseModel):
@@ -64,5 +65,4 @@ class CoreConfig(CoreConfigBase, BaseSettings):
     schedule_results: ScheduleResultsConfig | None
     data: dict[str, Any] = Field(default_factory=dict)
     
-    class Config:
-        env_prefix = "askui_runner_core_"
+    model_config = SettingsConfigDict(env_prefix="askui_runner_core_")

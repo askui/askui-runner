@@ -89,7 +89,7 @@ class AskUIJestRunner(Runner):
             with create_and_open(target_file_path, "w") as f:
                 f.write(
                     jinja_env.get_template(template).render(
-                        self.config.dict()
+                        self.config.model_dump()
                     )
                 )
 

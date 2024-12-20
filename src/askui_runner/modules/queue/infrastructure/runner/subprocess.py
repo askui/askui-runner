@@ -33,7 +33,7 @@ class SubprocessRunner(services.Runner):
         with tempfile.NamedTemporaryFile(
             mode="w+", delete=False, suffix=".json"
         ) as config_file:
-            json.dump(runner_config.dict(), config_file)
+            json.dump(runner_config.model_dump(), config_file)
             return config_file.name
 
     def _delete_config_file(self, config_file_name: str) -> None:

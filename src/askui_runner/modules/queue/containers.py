@@ -1,6 +1,14 @@
 from typing import Any
 
-from dependency_injector import containers, providers
+from dependency_injector.containers import DeclarativeContainer
+from dependency_injector.providers import (
+    Callable,
+    Configuration,
+    Dict,
+    Factory,
+    Selector,
+    Singleton,
+)
 
 from ..core.infrastructure.askui import AskUiAccessToken
 from .application import services as application_services
@@ -22,56 +30,58 @@ from .models import (
 def build_runner_config(
     config_dict: dict[str, Any], runner_job_data: RunnerJobData
 ) -> Config:
-    config = Config.parse_obj(config_dict)
-    config.queue = None
-    config.runner.type = RunnerType.SUBPROCESS
-    config.entrypoint = EntryPoint.JOB
-    config.job = runner_job_data
-    return config
+    return Config.model_validate({
+        **config_dict,
+        "queue": None,
+        "runner": {
+            **config_dict.get("runner", {}),
+            "type": RunnerType.SUBPROCESS,
+        },
+        "entrypoint": EntryPoint.JOB,
+        "job": runner_job_data,
+    })
 
 
-class Container(containers.DeclarativeContainer):
-    config = providers.Configuration()
-    access_token = providers.Factory(
+class Container(DeclarativeContainer):
+    config = Configuration()
+    access_token = Factory(
         AskUiAccessToken,
         access_token=config.queue.credentials.access_token,
     )
-    runner_jobs_queue_service = providers.Singleton(
+    runner_jobs_queue_service = Singleton(
         AskUiRunnerJobsQueueService,
         url=config.queue.api_url,
-        headers=providers.Dict(
+        headers=Dict(
             Authorization=access_token.provided.to_auth_header.call(),
         ),
     )
-    runner_config_factory = providers.Callable(
+    runner_config_factory = Callable(
         build_runner_config,
         config_dict=config,
     )
-    runner_service = providers.Selector(
+    runner_service = Selector(
         config.runner.type,
-        **{
-            RunnerType.SUBPROCESS: providers.Singleton(
-                SubprocessRunner,
-                runner_exec=config.runner.exec,
-                runner_config_factory=runner_config_factory.provider,
+        SUBPROCESS=Singleton(
+            SubprocessRunner,
+            runner_exec=config.runner.exec,
+            runner_config_factory=runner_config_factory.provider,
+        ),
+        K8S_JOB=Singleton(
+            K8sJobRunner,
+            config=Factory(
+                K8sJobRunnerConfig.parse_obj,
+                config.queue.k8s_job_runner,
             ),
-            RunnerType.K8S_JOB: providers.Singleton(
-                K8sJobRunner,
-                config=providers.Factory(
-                    K8sJobRunnerConfig.parse_obj,
-                    config.queue.k8s_job_runner,
-                ),
-                runner_config_factory=runner_config_factory.provider,
-            ),
-        },
+            runner_config_factory=runner_config_factory.provider,
+        ),
     )
-    clock_service = providers.Singleton(
+    clock_service = Singleton(
         TimeClock,
     )
-    system_service = providers.Singleton(
+    system_service = Singleton(
         SysSystem,
     )
-    runner_jobs_queue_polling_domain_service = providers.Singleton(
+    runner_jobs_queue_polling_domain_service = Singleton(
         domain_services.RunnerJobsQueuePolling,
         config=config,
         queue=runner_jobs_queue_service,
@@ -79,7 +89,7 @@ class Container(containers.DeclarativeContainer):
         clock=clock_service,
         system=system_service,
     )
-    runner_jobs_queue_polling_application_service = providers.Singleton(
+    runner_jobs_queue_polling_application_service = Singleton(
         application_services.RunnerJobsQueuePolling,
         runner_jobs_queue_polling_service=runner_jobs_queue_polling_domain_service,
     )

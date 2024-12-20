@@ -21,7 +21,7 @@ class AskUiRunnerJobsQueueService(services.RunnerJobsQueue):
                 f"{self.url}/lease",
                 headers=self.headers,
                 timeout=REQUEST_TIMEOUT_IN_S,
-                params=filters.dict(),
+                params=filters.model_dump(),
             )
             if response.status_code != 200:
                 response.raise_for_status()
