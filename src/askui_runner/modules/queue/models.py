@@ -24,11 +24,11 @@ class ContainerConfig(BaseModel):
 
 
 class K8sToleration(BaseModel):
-    effect: str | None
-    key: str | None
+    effect: str | None = Field(default=None)
+    key: str | None = Field(default=None)
     operator: str
-    value: str | None
-    toleration_seconds: int | None
+    value: str | None = Field(default=None)
+    toleration_seconds: int | None = Field(default=None)
 
 
 class K8sJobRunnerConfig(BaseModel):
@@ -142,8 +142,8 @@ class EntryPoint(str, enum.Enum):
 
 class RunnerJobData(BaseModel):
     credentials: WorkspaceCredentials
-    workflows: list[str] | None = Field(None)
-    schedule_results_api_url: str | None = Field(None)
+    workflows: list[str] | None = Field(default=None)
+    schedule_results_api_url: str | None = Field(default=None)
     results_api_url: str
     workflows_api_url: str
     inference_api_url: str
@@ -187,7 +187,7 @@ class Config(BaseSettings):
         default=3600,
         description="Timeout in seconds for a job to be completed before it is considered failed",
     )
-    job: RunnerJobData | None = Field(None, description="Configuration of the job")
+    job: RunnerJobData | None = Field(default=None, description="Configuration of the job")
     log_level: LogLevel = Field(default=LogLevel.INFO, description="Log level")
 
     model_config = SettingsConfigDict(validate_assignment=True)

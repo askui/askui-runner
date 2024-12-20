@@ -22,7 +22,7 @@ class WorkspaceCredentials(BaseModel):
 
 class WorkflowsConfig(BaseModel):
     api_url: str
-    prefixes: list[str] | None = Field(None)
+    prefixes: list[str] | None = Field(default=None)
     dir: str
 
 
