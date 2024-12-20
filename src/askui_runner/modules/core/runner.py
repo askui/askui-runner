@@ -28,7 +28,7 @@ class Runner:
         self,
         config: dict[str, Any],
     ) -> None:
-        self.config = CoreConfig.parse_obj(config)
+        self.config = CoreConfig.model_validate(config)
 
     @property
     def enable(self) -> FeatureToggles:

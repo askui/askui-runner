@@ -124,7 +124,7 @@ class RunnerJobsQueuePolling:
         clock: Clock,
         system: System,
     ):
-        self.config = Config.parse_obj(
+        self.config = Config.model_validate(
             config
         ).runner_jobs_queue_polling_domain_service_config
         self.queue = queue

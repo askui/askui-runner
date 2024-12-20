@@ -69,7 +69,7 @@ class Container(DeclarativeContainer):
         K8S_JOB=Singleton(
             K8sJobRunner,
             config=Factory(
-                K8sJobRunnerConfig.parse_obj,
+                K8sJobRunnerConfig.model_validate,
                 config.queue.k8s_job_runner,
             ),
             runner_config_factory=runner_config_factory.provider,

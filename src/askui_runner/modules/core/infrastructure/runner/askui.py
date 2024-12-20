@@ -138,13 +138,17 @@ class AskUIVisionAgentExperimentsRunner(Runner):
             prefix="askui-runner-",
         ) as dir_path:
             os.chdir(dir_path)
+            logging.info(f"Cloning vision agent experiments into {dir_path}...")
             os.system("git clone --depth 1 --branch main --single-branch https://github.com/askui/vision-agent-experiments.git")
             os.chdir("vision-agent-experiments")
-            for key, value in self.config.data.items():
-                os.environ[key.upper()] = json.dumps(value) if not isinstance(value, str) else value
+            logging.info("Setting up environment variables...")
             os.environ["ASKUI_WORKSPACE_ID"] = self.config.credentials.workspace_id
             os.environ["ASKUI_TOKEN"] = self.config.credentials.access_token
+            for key, value in self.config.data.items():
+                os.environ[key.upper()] = json.dumps(value) if not isinstance(value, str) else value
+            logging.info("Installing dependencies with pdm install...")
             os.system("pdm install")
+            logging.info("Running vision agent experiments with pdm run vae...")
             exit_code = os.system("pdm run vae")
             os.chdir(self.cwd)
             if exit_code == 0:

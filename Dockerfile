@@ -28,15 +28,16 @@ ARG PYTHONPATH=/project/pkgs
 
 RUN groupadd -r askui && \
     useradd -r -g askui -s /bin/false askui --create-home
+    
+COPY --from=builder --chown=askui:askui /project/__pypackages__/${_PYTHON_VERSION}/lib ${PYTHONPATH}
+COPY --from=builder --chown=askui:askui /project/__pypackages__/${_PYTHON_VERSION}/bin/* /bin/
+
 # Necessary for cloning (with git) and running (with pdm) vision agent experiments
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
+    apt-get install -y --no-install-recommends git openssh-client ca-certificates build-essential libffi-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     pip install -U pdm
-
-COPY --from=builder --chown=askui:askui /project/__pypackages__/${_PYTHON_VERSION}/lib ${PYTHONPATH}
-COPY --from=builder --chown=askui:askui /project/__pypackages__/${_PYTHON_VERSION}/bin/* /bin/
     
 USER askui
 
