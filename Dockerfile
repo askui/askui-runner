@@ -6,7 +6,8 @@ ARG NODE_VERSION="22"
 # BUILD #
 #########
 
-FROM python:${_PYTHON_VERSION}-alpine AS builder
+# Using slim because other image is in slim
+FROM python:${_PYTHON_VERSION}-slim AS builder
 
 RUN pip install -U pip setuptools wheel pdm
 
