@@ -2,7 +2,8 @@ import enum
 from typing import Any, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, BaseSettings, Field, validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ..core.models import CoreConfigBase, WorkspaceCredentials
 
@@ -13,13 +14,14 @@ class ContainerResource(BaseModel):
 
 
 class ContainerResources(BaseModel):
-    requests: ContainerResource = Field(default=ContainerResource())
-    limits: ContainerResource = Field(default=ContainerResource())
+    requests: ContainerResource = Field(default_factory=ContainerResource)
+    limits: ContainerResource = Field(default_factory=ContainerResource)
 
 
 class ContainerConfig(BaseModel):
     image: str
-    resources: ContainerResources = Field(default=ContainerResources())
+    resources: ContainerResources = Field(default_factory=ContainerResources)
+
 
 class K8sToleration(BaseModel):
     effect: str | None
@@ -28,16 +30,21 @@ class K8sToleration(BaseModel):
     value: str | None
     toleration_seconds: int | None
 
+
 class K8sJobRunnerConfig(BaseModel):
     namespace: str = "dev"
     shared_memory: str = Field(default="1Gi")
-    tolerations: list[K8sToleration] = Field(default=[])
+    tolerations: list[K8sToleration] = Field(default_factory=list)
     node_selector: dict[str, str] | None = Field(default=None)
-    runner_container = ContainerConfig(
-        image="askuigmbh/askui-runner:latest",
+    runner_container: ContainerConfig = Field(
+        default_factory=lambda: ContainerConfig(
+            image="askuigmbh/askui-runner:latest",
+        )
     )
-    controller_container = ContainerConfig(
-        image="askuigmbh/askui-ui-controller:v0.11.2-chrome-100.0.4896.60-amd64"
+    controller_container: ContainerConfig = Field(
+        default_factory=lambda: ContainerConfig(
+            image="askuigmbh/askui-ui-controller:v0.11.2-chrome-100.0.4896.60-amd64"
+        )
     )
 
 
@@ -51,17 +58,17 @@ class Host(str, enum.Enum):
     SELF = "SELF"
 
 
-class RunnerConfig(
-    CoreConfigBase
-):
+class RunnerConfig(CoreConfigBase):
     id: str = Field(
         str(uuid4()), description="ID of the runner"
     )  # only relevant for runner in queue
     exec: str = Field(  # only relevant for runner in queue
-        "python -m askui_runner", 
+        "python -m askui_runner",
         description="Command to execute the runner",
     )
-    workspace_id: Optional[str] = Field(None, description="ID of the workspace to run jobs for")
+    workspace_id: Optional[str] = Field(
+        None, description="ID of the workspace to run jobs for"
+    )
     tags: list[str] = Field(  # only relevant for runner in queue
         [],
         description="Tags to filter jobs by, i.e., only picks jobs from schedules with matching tags",
@@ -85,6 +92,7 @@ class RunnerConfig(
         "results",
         description="Absolute path or path relative to {project_dir} of directory where schedule results are to be put in and to be uploaded from",
     )
+
 
 class RunnerJobsFilters(BaseModel):
     tags: list[str] = []
@@ -134,14 +142,14 @@ class EntryPoint(str, enum.Enum):
 
 class RunnerJobData(BaseModel):
     credentials: WorkspaceCredentials
-    workflows: list[str]
+    workflows: list[str] | None = Field(None)
     schedule_results_api_url: str | None = Field(None)
     results_api_url: str
     workflows_api_url: str
     inference_api_url: str
     data: dict[str, Any] = Field(default_factory=dict)
-    
-    def dict(self, **kwargs) -> dict[str, Any]:
+
+    def model_dump(self, **kwargs) -> dict[str, Any]:
         if "exclude" in kwargs and kwargs["exclude"] is not None:
             if "data" not in kwargs["exclude"]:
                 if isinstance(kwargs["exclude"], set):
@@ -151,7 +159,7 @@ class RunnerJobData(BaseModel):
         else:
             kwargs["exclude"] = {"data"}
         return {
-            **super().dict(**kwargs),
+            **super().model_dump(**kwargs),
             "data": self.data,
         }
 
@@ -164,46 +172,39 @@ class LogLevel(str, enum.Enum):
     CRITICAL = "CRITICAL"
 
 
-class Config(
-    BaseSettings
-):
+class Config(BaseSettings):
     entrypoint: EntryPoint = Field(
         default=EntryPoint.QUEUE, description="Entry point of the runner"
     )
     runner: RunnerConfig = Field(
-        default=RunnerConfig(), description="Configuration of the runner"  # type: ignore
+        default_factory=RunnerConfig, description="Configuration of the runner"
     )
     queue: Optional[QueueConfig] = Field(
+        default=None,
         description="Configuration of the queue"  # type: ignore
     )
     job_timeout: int = Field(
         default=3600,
         description="Timeout in seconds for a job to be completed before it is considered failed",
     )
-    job: RunnerJobData | None
+    job: RunnerJobData | None = Field(None, description="Configuration of the job")
     log_level: LogLevel = Field(default=LogLevel.INFO, description="Log level")
 
-    @validator("queue", always=True)
-    def validate_queue_set_when_set_as_entrypoint(  # pylint: disable=no-self-argument
-        cls,
-        v: Optional[QueueConfig],
-        values,
-    ) -> Optional[QueueConfig]:
-        if v is None and values["entrypoint"] == EntryPoint.QUEUE:
+    model_config = SettingsConfigDict(validate_assignment=True)
+
+    @model_validator(mode="after")
+    def validate_queue_set_when_set_as_entrypoint(self) -> "Config":
+        if self.queue is None and self.entrypoint == EntryPoint.QUEUE:
             raise ValueError(
                 'Queue configuration must be given when entrypoint is "queue"'
             )
-        return v
+        return self
 
-    @validator("job", always=True)
-    def validate_job_set_when_set_as_entrypoint(  # pylint: disable=no-self-argument
-        cls,
-        v: Optional[RunnerJobData],
-        values,
-    ) -> Optional[RunnerJobData]:
-        if v is None and values["entrypoint"] == EntryPoint.JOB:
+    @model_validator(mode="after")
+    def validate_job_set_when_set_as_entrypoint(self) -> "Config":
+        if self.job is None and self.entrypoint == EntryPoint.JOB:
             raise ValueError('Job data must be given when entrypoint is "job"')
-        return v
+        return self
 
     @property
     def runner_jobs_queue_polling_domain_service_config(

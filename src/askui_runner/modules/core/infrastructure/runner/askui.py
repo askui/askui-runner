@@ -4,12 +4,13 @@ import os
 import shutil
 import socket
 import sys
+import tempfile
 import time
 from typing import Any, Optional
 
 import jinja2
 
-from ...domain.services import (
+from ...runner import (
     ResultsUpload,
     Runner,
     RunWorkflowsResult,
@@ -49,15 +50,18 @@ def wait_for_controller_to_start(host: str, port: int):
             logging.info(f"Waiting for controller to start on {host}:{port}...")
             time.sleep(10)
 
-class AskUiJestRunnerService(Runner):
+class AskUIJestRunner(Runner):
     _TEMPLATE_EXTENSION = "jinja"
+
     def __init__(
         self,
         config: dict[str, Any],
         workflows_download_service: WorkflowsDownload,
         results_upload_service: ResultsUpload,
     ) -> None:
-        super().__init__(config, workflows_download_service, results_upload_service)
+        super().__init__(config)
+        self.workflows_download_service = workflows_download_service
+        self.results_upload_service = results_upload_service
         self.cwd: Optional[str] = None
 
     @property
@@ -69,23 +73,23 @@ class AskUiJestRunnerService(Runner):
         entrypoint_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
         return os.path.join(entrypoint_dir, self.config.project_dir)
 
-    def create_jinja_env(self, dir_path: str) -> jinja2.Environment:
+    def _create_jinja_env(self, dir_path: str) -> jinja2.Environment:
         return jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath=dir_path),
         )
 
-    def render_templates(self, dir_path: str) -> None:
-        jinja_env = self.create_jinja_env(dir_path=dir_path)
-        templates = jinja_env.list_templates(extensions=[AskUiJestRunnerService._TEMPLATE_EXTENSION])
+    def _render_templates(self, dir_path: str) -> None:
+        jinja_env = self._create_jinja_env(dir_path=dir_path)
+        templates = jinja_env.list_templates(extensions=[AskUIJestRunner._TEMPLATE_EXTENSION])
         for template in templates:
-            template_name_without_extension = template[:-(len(AskUiJestRunnerService._TEMPLATE_EXTENSION) + 1)] # +1 for the dot
+            template_name_without_extension = template[:-(len(AskUIJestRunner._TEMPLATE_EXTENSION) + 1)] # +1 for the dot
             target_file_path = os.path.join(
                 dir_path, *template_name_without_extension.split('/')
             )
             with create_and_open(target_file_path, "w") as f:
                 f.write(
                     jinja_env.get_template(template).render(
-                        self.config.dict()
+                        self.config.model_dump()
                     )
                 )
 
@@ -94,21 +98,55 @@ class AskUiJestRunnerService(Runner):
         os.chdir(self.project_dir)
         os.system("npm install")
         copy_directory_contents(src_dir=self.project_dir, dest_dir=dir_path)
-        self.render_templates(dir_path=dir_path)
+        self._render_templates(dir_path=dir_path)
         with create_and_open(os.path.join(dir_path, "data.json"), "w") as f:
             json.dump(self.config.data, f)
         os.chdir(dir_path)
 
+    def download_workflows(self) -> None:
+        self.workflows_download_service.download()
+
     def run_workflows(self) -> RunWorkflowsResult:
-        wait_for_controller_to_start(
-            host=self.config.controller.host,
-            port=self.config.controller.port,
-        )
-        exit_code = os.system("npx jest --config jest.config.ts")
+        if self.config.enable.wait_for_controller:
+            wait_for_controller_to_start(
+                host=self.config.controller.host,
+                port=self.config.controller.port,
+            )
+        exit_code = os.system(self.config.command)
         if exit_code != 0:
             return RunWorkflowsResult.FAILURE
         return RunWorkflowsResult.SUCCESS
 
+    def upload_results(self) -> None:
+        self.results_upload_service.upload()
+
     def teardown(self) -> None:
         if self.cwd is not None:
             os.chdir(self.cwd)
+
+
+class AskUIVisionAgentExperimentsRunner(Runner):
+    def __init__(
+        self,
+        config: dict[str, Any],
+    ) -> None:
+        super().__init__(config)
+        self.cwd = os.getcwd()
+        
+    def run(self) -> RunWorkflowsResult:
+        with tempfile.TemporaryDirectory(
+            prefix="askui-runner-",
+        ) as dir_path:
+            os.chdir(dir_path)
+            os.system("git clone --depth 1 --branch main --single-branch https://github.com/askui/vision-agent-experiments.git")
+            os.chdir("vision-agent-experiments")
+            for key, value in self.config.data.items():
+                os.environ[key.upper()] = json.dumps(value) if not isinstance(value, str) else value
+            os.environ["ASKUI_WORKSPACE_ID"] = self.config.credentials.workspace_id
+            os.environ["ASKUI_TOKEN"] = self.config.credentials.access_token
+            os.system("pdm install")
+            exit_code = os.system("pdm run vae")
+            os.chdir(self.cwd)
+            if exit_code == 0:
+                return RunWorkflowsResult.SUCCESS
+            return RunWorkflowsResult.FAILURE

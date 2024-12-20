@@ -1,26 +1,22 @@
 [project]
 name = "askui-runner"
-version = "0.2.3"
+version = "0.2.4"
 description = "Runner for Workflows Defined in AskUI Studio"
 dependencies = [
-    "dependency-injector<5",
-    "pydantic<2",
-    "jinja2<4",
-    "requests<3",
-    "tenacity<9",
-    "requests-toolbelt<2",
-    "pyyaml<7",
-    "typer[all]<1",
-    "kubernetes<24",
+    "dependency-injector>=4.44.0",
+    "pydantic>=2.10.4",
+    "jinja2>=3.1.4",
+    "requests>=2.32.3",
+    "tenacity>=9.0.0",
+    "requests-toolbelt>=1.0.0",
+    "pyyaml>=6.0.2",
+    "typer[all]>=0.15.1",
+    "kubernetes>=28.0.0",
+    "pydantic-settings>=2.7.0",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "UNLICENSED"}
-
-[tool.pdm.dev-dependencies]
-dev = [
-    "import-linter<2.0.0",
-]
 
 [tool.importlinter]
 root_package = "runner"
@@ -57,4 +53,9 @@ layers = [
     "runner.modules.queue.infrastructure",
     "runner.modules.queue.domain",
     "runner.modules.queue.models",
+]
+
+[dependency-groups]
+dev = [
+    "import-linter>=2.1",
 ]

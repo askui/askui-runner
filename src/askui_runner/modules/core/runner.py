@@ -3,7 +3,7 @@ import tempfile
 from abc import ABC, abstractmethod
 from typing import Any
 
-from ..models import CoreConfig, FeatureToggles
+from .models import CoreConfig, FeatureToggles
 
 
 class WorkflowsDownload(ABC):
@@ -27,12 +27,8 @@ class Runner:
     def __init__(
         self,
         config: dict[str, Any],
-        workflows_download_service: WorkflowsDownload,
-        results_upload_service: ResultsUpload,
     ) -> None:
         self.config = CoreConfig.parse_obj(config)
-        self.workflows_download_service = workflows_download_service
-        self.results_upload_service = results_upload_service
 
     @property
     def enable(self) -> FeatureToggles:
@@ -41,7 +37,7 @@ class Runner:
     def run(self) -> RunWorkflowsResult:
         result = RunWorkflowsResult.SUCCESS
         with tempfile.TemporaryDirectory(
-            suffix="askui-runner-",
+            prefix="askui-runner-",
         ) as dir_path:
             if self.enable.setup:
                 self.setup(dir_path=dir_path)
@@ -59,13 +55,13 @@ class Runner:
         pass
 
     def download_workflows(self) -> None:
-        self.workflows_download_service.download()
+        pass
 
     def run_workflows(self) -> RunWorkflowsResult:
         return RunWorkflowsResult.SUCCESS
 
     def upload_results(self) -> None:
-        self.results_upload_service.upload()
+        pass
 
     def teardown(self) -> None:
         pass

@@ -1,25 +1,25 @@
-from dependency_injector import containers, providers
+from dependency_injector.containers import DeclarativeContainer
+from dependency_injector.providers import Configuration, Dict, Factory, List, Selector, Singleton
 
-from .application import services as application_services
 from .infrastructure.askui import AskUiAccessToken
 from .infrastructure.files.askui import AskUiFilesService
 from .infrastructure.results_upload.askui import AskUiResultsUploadService, ChainedResultsUploadService
-from .infrastructure.runner.askui import AskUiJestRunnerService
+from .infrastructure.runner.askui import AskUIJestRunner, AskUIVisionAgentExperimentsRunner
 from .infrastructure.workflows_download.askui import AskUiWorkflowsDownloadService
 
 
-class Container(containers.DeclarativeContainer):
-    config = providers.Configuration(strict=True)
-    access_token = providers.Factory(
+class Container(DeclarativeContainer):
+    config = Configuration(strict=True)
+    access_token = Factory(
         AskUiAccessToken,
         access_token=config.credentials.access_token,
     )
-    base_http_headers = providers.Dict(
+    base_http_headers = Dict(
         Authorization=access_token.provided.to_auth_header.call(),
     )
-    workflows_download_service = providers.Singleton(
+    workflows_download_service = Singleton(
         AskUiWorkflowsDownloadService,
-        files_download_service=providers.Singleton(
+        files_download_service=Singleton(
             AskUiFilesService,
             base_url=config.workflows.api_url,
             headers=base_http_headers,
@@ -27,38 +27,41 @@ class Container(containers.DeclarativeContainer):
         workflows_dir=config.workflows.dir,
         remote_workflows_paths=config.workflows.prefixes,
     )
-    results_upload_service = providers.Singleton(
+    results_upload_service = Singleton(
         AskUiResultsUploadService,
-        files_upload_service=providers.Singleton(
+        files_upload_service=Singleton(
             AskUiFilesService,
             base_url=config.results.api_url,
             headers=base_http_headers,
         ),
         results_dir=config.results.dir,
     )
-    schedule_results_upload_service = providers.Singleton(
+    schedule_results_upload_service = Singleton(
         AskUiResultsUploadService,
-        files_upload_service=providers.Singleton(
+        files_upload_service=Singleton(
             AskUiFilesService,
             base_url=config.schedule_results.api_url,
             headers=base_http_headers,
         ),
         results_dir=config.schedule_results.dir,
     )
-    chained_results_upload_service = providers.Singleton(
+    chained_results_upload_service = Singleton(
         ChainedResultsUploadService,
-        services=providers.List(
+        services=List(
             results_upload_service,
             schedule_results_upload_service,
         ),
     )
-    runner_domain_service = providers.Singleton(
-        AskUiJestRunnerService,
-        config=config,
-        workflows_download_service=workflows_download_service,
-        results_upload_service=chained_results_upload_service,
-    )
-    runner_application_service = providers.Singleton(
-        application_services.Runner,
-        runner=runner_domain_service,
+    runner = Selector(
+        config.runner_type,
+        askui_jest_runner=Singleton(
+            AskUIJestRunner,
+            config=config,
+            workflows_download_service=workflows_download_service,
+            results_upload_service=chained_results_upload_service,
+        ),
+        askui_vision_agent_experiments_runner=Singleton(
+            AskUIVisionAgentExperimentsRunner,
+            config=config,
+        ),
     )

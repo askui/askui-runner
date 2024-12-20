@@ -2,13 +2,13 @@ import json
 from typing import Any
 
 import yaml
+from pydantic_settings import SettingsConfigDict
 
 from .modules.queue import config as queue_config
 
 
 class Config(queue_config.Config):
-    class Config:
-        env_prefix = "askui_runner_"
+    model_config = SettingsConfigDict(env_prefix="askui_runner_")
 
 
 def read_config_dict(config_json_or_config_file_path: str) -> dict[str, Any]:
@@ -25,4 +25,4 @@ def read_config_dict(config_json_or_config_file_path: str) -> dict[str, Any]:
 
 
 def read_config(config_json_or_config_file_path: str) -> Config:
-    return Config.parse_obj(read_config_dict(config_json_or_config_file_path))
+    return Config.model_validate(read_config_dict(config_json_or_config_file_path))

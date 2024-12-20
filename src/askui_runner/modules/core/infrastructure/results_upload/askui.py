@@ -1,10 +1,10 @@
 import os
 
-from ...domain import services
+from ...runner import ResultsUpload
 from ..files.files import FilesUploadService
 
 
-class AskUiResultsUploadService(services.ResultsUpload):
+class AskUiResultsUploadService(ResultsUpload):
     def __init__(
         self,
         files_upload_service: FilesUploadService,
@@ -21,8 +21,8 @@ class AskUiResultsUploadService(services.ResultsUpload):
             )
 
 
-class ChainedResultsUploadService(services.ResultsUpload):
-    def __init__(self, services: list[services.ResultsUpload]) -> None:
+class ChainedResultsUploadService(ResultsUpload):
+    def __init__(self, services: list[ResultsUpload]) -> None:
         self.services = services
 
     def upload(self) -> None:

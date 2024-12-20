@@ -22,7 +22,7 @@ def run_job(config: Config) -> None:
     runner_core_config = build_runner_core_config(config)
     container = CoreContainer()
     container.config.from_pydantic(runner_core_config)
-    exit_code = container.runner_application_service().run()
+    exit_code = container.runner().run()
     sys.exit(exit_code)
 
 
@@ -33,6 +33,8 @@ def build_runner_core_config(config: Config):
             'Expected job to be defined in config because entrypoint is set to "job" but found no defnition'
         )
     return CoreConfig(
+        command=config.runner.command,
+        runner_type=runner_job_data.data.get("runner_type", "askui_jest_runner"),
         controller=ControllerConfig(
             host=config.runner.controller.host,
             port=config.runner.controller.port,

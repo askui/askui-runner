@@ -79,7 +79,7 @@ class K8sJobRunner(Runner):
                                     ),
                                 ],
                                 resources=client.V1ResourceRequirements(
-                                    **self.config.runner_container.resources.dict()
+                                    **self.config.runner_container.resources.model_dump()
                                 ),
                             ),
                             client.V1Container(
@@ -108,7 +108,7 @@ class K8sJobRunner(Runner):
                                     ),
                                 ],
                                 resources=client.V1ResourceRequirements(
-                                    **self.config.controller_container.resources.dict()
+                                    **self.config.controller_container.resources.model_dump()
                                 ),
                             ),
                         ],
@@ -130,7 +130,7 @@ class K8sJobRunner(Runner):
                         ],
                         tolerations=[
                             client.V1Toleration(
-                                **toleration.dict(),
+                                **toleration.model_dump(),
                             ) for toleration in self.config.tolerations
                         ] if self.config.tolerations else None,
                         node_selector=self.config.node_selector,

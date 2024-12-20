@@ -4,21 +4,25 @@ from typing import Optional
 from urllib.parse import urlencode, urljoin
 
 import requests
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .files import FilesDownloadService, FilesUploadService
 
 
 class FileDto(BaseModel):
-    name: str
-    path: str
-    url: str
+    name: str = Field(..., description="Name of the file")
+    path: str = Field(..., description="Path of the file")
+    url: str = Field(..., description="URL of the file")
+
+    model_config = ConfigDict(frozen=True)
 
 
 class FilesListResponseDto(BaseModel):
-    data: list[FileDto]
-    next_continuation_token: Optional[str] = Field(default=None)
+    data: list[FileDto] = Field(..., description="List of files")
+    next_continuation_token: Optional[str] = Field(default=None, description="Token for pagination")
+
+    model_config = ConfigDict(frozen=True)
 
 
 REQUEST_TIMEOUT_IN_S=60

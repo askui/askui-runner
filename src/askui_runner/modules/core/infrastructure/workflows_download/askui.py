@@ -1,19 +1,19 @@
 import os
 
-from ...domain import services
+from ...runner import WorkflowsDownload
 from ..files.files import FilesDownloadService
 
 
-class AskUiWorkflowsDownloadService(services.WorkflowsDownload):
+class AskUiWorkflowsDownloadService(WorkflowsDownload):
     def __init__(
         self,
         files_download_service: FilesDownloadService,
         workflows_dir: str,
-        remote_workflows_paths: list[str],
+        remote_workflows_paths: list[str] | None,
     ) -> None:
         self.files_download_service = files_download_service
         self.workflows_dir = workflows_dir
-        self.remote_workflows_paths = remote_workflows_paths
+        self.remote_workflows_paths = remote_workflows_paths or []
 
     def build_local_dir_path_to_prevent_overriding(self, remote_path: str) -> str:
         """Returns a local_dir_path that is the concatenation of local_workflows_folder and the part of remote_path (the "workflows_path") that identifies the workflow inside the workspace.
