@@ -1,6 +1,6 @@
 [project]
 name = "askui-runner"
-version = "0.2.3"
+version = "0.2.4"
 description = "Runner for Workflows Defined in AskUI Studio"
 dependencies = [
     "dependency-injector>=4.44.0",
