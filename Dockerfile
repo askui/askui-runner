@@ -27,9 +27,13 @@ ARG PYTHONPATH=/project/pkgs
 
 RUN groupadd -r askui && \
     useradd -r -g askui -s /bin/false askui --create-home
-# Necessary for running vision agent experiments with pdm
-RUN pip install -U pdm
- 
+# Necessary for cloning (with git) and running (with pdm) vision agent experiments
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip install -U pdm
+
 COPY --from=builder --chown=askui:askui /project/__pypackages__/${_PYTHON_VERSION}/lib ${PYTHONPATH}
 COPY --from=builder --chown=askui:askui /project/__pypackages__/${_PYTHON_VERSION}/bin/* /bin/
     
