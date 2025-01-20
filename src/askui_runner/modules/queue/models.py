@@ -207,7 +207,7 @@ class Config(BaseSettings):
         return self
 
     @property
-    def runner_jobs_queue_polling_domain_service_config(
+    def runner_jobs_queue_polling_config(
         self,
     ) -> RunnerJobsQueuePollingConfig:
         return RunnerJobsQueuePollingConfig(

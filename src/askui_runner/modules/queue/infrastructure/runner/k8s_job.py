@@ -4,7 +4,7 @@ from importlib.metadata import version
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
-from ...domain.services import Runner, RunnerJob
+from ...queue import Runner, RunnerJob
 from ...models import K8sJobRunnerConfig
 from .shared import RunnerConfigFactory
 

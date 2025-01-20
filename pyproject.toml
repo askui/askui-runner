@@ -3,7 +3,6 @@ name = "askui-runner"
 version = "0.2.6"
 description = "Runner for Workflows Defined in AskUI Studio"
 dependencies = [
-    "dependency-injector>=4.44.0",
     "pydantic>=2.10.4",
     "jinja2>=3.1.4",
     "requests>=2.32.3",
@@ -24,6 +23,7 @@ root_package = "runner"
 [[tool.importlinter.contracts]]
 name = "Layered app architecture"
 type = "layers"
+
 layers = [
     "runner.__main__",
     "runner.containers",
@@ -38,9 +38,8 @@ type = "layers"
 layers = [
     "runner.modules.core.containers",
     "runner.modules.core.config",
-    "runner.modules.core.application",
+    "runner.modules.core.runner",
     "runner.modules.core.infrastructure",
-    "runner.modules.core.domain",
     "runner.modules.core.models",
 ]
 
@@ -49,9 +48,8 @@ name = "Layered module architecture (jobs queue)"
 type = "layers"
 layers = [
     "runner.modules.queue.containers",
-    "runner.modules.queue.application",
+    "runner.modules.queue.queue",
     "runner.modules.queue.infrastructure",
-    "runner.modules.queue.domain",
     "runner.modules.queue.models",
 ]
 
