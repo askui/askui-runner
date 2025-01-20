@@ -51,7 +51,7 @@ def build_runner_core_config(config: Config):
             dir=config.runner.results_dir,
         ),
         schedule_results=ScheduleResultsConfig(
-            api_url=runner_job_data.schedule_results_api_url or '',
+            api_url=runner_job_data.schedule_results_api_url or "",
             dir=config.runner.schedule_results_dir,
         ),
         data=runner_job_data.data,
@@ -59,7 +59,9 @@ def build_runner_core_config(config: Config):
 
 
 def take_entrypoint(config: Config) -> None:
-    logging.basicConfig(level=config.log_level.value, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=config.log_level.value, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     match config.entrypoint:
         case EntryPoint.QUEUE:
             run_jobs_from_queue(config)
@@ -71,7 +73,9 @@ def main(
     config_json_or_config_file_path: Annotated[
         str,
         typer.Option(
-            "--config", "-c", help="Path to config file (.json, .yaml, .yml supported) or config provided as json"
+            "--config",
+            "-c",
+            help="Path to config file (.json, .yaml, .yml supported) or config provided as json",
         ),
     ],
 ) -> None:

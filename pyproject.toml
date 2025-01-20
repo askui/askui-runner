@@ -15,45 +15,68 @@ dependencies = [
 ]
 requires-python = ">=3.10"
 readme = "README.md"
-license = {text = "UNLICENSED"}
+license = { text = "UNLICENSED" }
 
 [tool.importlinter]
-root_package = "runner"
+root_package = "askui_runner"
 
 [[tool.importlinter.contracts]]
 name = "Layered app architecture"
 type = "layers"
 
 layers = [
-    "runner.__main__",
-    "runner.containers",
-    "runner.config",
-    "runner.modules.queue",
-    "runner.modules.core",
+    "askui_runner.__main__",
+    "askui_runner.config",
+    "askui_runner.modules.queue",
+    "askui_runner.modules.core",
 ]
 
 [[tool.importlinter.contracts]]
 name = "Layered module architecture (core)"
 type = "layers"
 layers = [
-    "runner.modules.core.containers",
-    "runner.modules.core.config",
-    "runner.modules.core.runner",
-    "runner.modules.core.infrastructure",
-    "runner.modules.core.models",
+    "askui_runner.modules.core.containers",
+    "askui_runner.modules.core.config",
+    "askui_runner.modules.core.infrastructure",
+    "askui_runner.modules.core.runner",
+    "askui_runner.modules.core.models",
 ]
 
 [[tool.importlinter.contracts]]
 name = "Layered module architecture (jobs queue)"
 type = "layers"
 layers = [
-    "runner.modules.queue.containers",
-    "runner.modules.queue.queue",
-    "runner.modules.queue.infrastructure",
-    "runner.modules.queue.models",
+    "askui_runner.modules.queue.containers",
+    "askui_runner.modules.queue.infrastructure",
+    "askui_runner.modules.queue.queue",
+    "askui_runner.modules.queue.models",
 ]
+
+[tool.pdm.scripts]
+format = "ruff format --check src/"
+"format:fix" = "ruff format src/"
+typecheck = "mypy src/"
+lint = "ruff check src/"
+"lint:fix" = "ruff check --fix src/"
+checks = { composite = [
+    "format",
+    "typecheck",
+    "lint",
+    "lint-imports",
+] }
+"checks:fix" = { composite = [
+    "format:fix",
+    "typecheck",
+    "lint:fix",
+    "lint-imports",
+] }
+runner = "python -m askui_runner -c config.yaml"
 
 [dependency-groups]
 dev = [
     "import-linter>=2.1",
+    "ruff>=0.9.2",
+    "mypy>=1.14.1",
+    "types-requests>=2.32.0.20241016",
+    "types-PyYAML>=6.0.12.20241230",
 ]

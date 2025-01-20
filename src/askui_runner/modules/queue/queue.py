@@ -5,7 +5,11 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from .models import Config, RunnerJobData, RunnerJobsFilters, RunnerJobsQueuePollingConfig
+from .models import (
+    RunnerJobData,
+    RunnerJobsFilters,
+    RunnerJobsQueuePollingConfig,
+)
 
 
 class System(ABC):

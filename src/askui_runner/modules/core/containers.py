@@ -4,8 +4,14 @@ from typing import Dict, List, Optional
 
 from .infrastructure.askui import AskUiAccessToken
 from .infrastructure.files.askui import AskUiFilesService
-from .infrastructure.results_upload.askui import AskUiResultsUploadService, ChainedResultsUploadService
-from .infrastructure.runner.askui import AskUIJestRunner, AskUIVisionAgentExperimentsRunner
+from .infrastructure.results_upload.askui import (
+    AskUiResultsUploadService,
+    ChainedResultsUploadService,
+)
+from .infrastructure.runner.askui import (
+    AskUIJestRunner,
+    AskUIVisionAgentExperimentsRunner,
+)
 from .infrastructure.workflows_download.askui import AskUiWorkflowsDownloadService
 from .models import CoreConfig
 from .runner import ResultsUpload
@@ -50,7 +56,7 @@ class CoreContainer:
     def _schedule_results_upload_service(self) -> Optional[AskUiResultsUploadService]:
         if self._config.schedule_results is None:
             return None
-        
+
         files_upload_service = AskUiFilesService(
             base_url=self._config.schedule_results.api_url,
             headers=self._base_http_headers,

@@ -18,31 +18,35 @@ from .models import (
 from .queue import RunnerJobsQueuePolling
 
 
-def build_runner_config(
-    config: Config, runner_job_data: RunnerJobData
-) -> Config:
-    return Config.model_validate({
-        **config.model_dump(),
-        "queue": None,
-        "runner": {
-            **config.runner.model_dump(),
-            "type": RunnerType.SUBPROCESS,
-        },
-        "entrypoint": EntryPoint.JOB,
-        "job": runner_job_data,
-    })
+def build_runner_config(config: Config, runner_job_data: RunnerJobData) -> Config:
+    return Config.model_validate(
+        {
+            **config.model_dump(),
+            "queue": None,
+            "runner": {
+                **config.runner.model_dump(),
+                "type": RunnerType.SUBPROCESS,
+            },
+            "entrypoint": EntryPoint.JOB,
+            "job": runner_job_data,
+        }
+    )
 
 
 class QueueContainer:
     def __init__(self, config: Config):
         self._config = config
-        self._runner_config_factory: RunnerConfigFactory = lambda runner_job_data: build_runner_config(config, runner_job_data)
+        self._runner_config_factory: RunnerConfigFactory = (
+            lambda runner_job_data: build_runner_config(config, runner_job_data)
+        )
 
     @cached_property
     def _access_token(self) -> AskUiAccessToken:
         if self._config.queue is None:
             raise ValueError("Queue config is required")
-        return AskUiAccessToken(access_token=self._config.queue.credentials.access_token)
+        return AskUiAccessToken(
+            access_token=self._config.queue.credentials.access_token
+        )
 
     @cached_property
     def _runner_jobs_queue_service(self) -> AskUiRunnerJobsQueueService:
@@ -62,7 +66,9 @@ class QueueContainer:
             )
         elif self._config.runner.type == RunnerType.K8S_JOB:
             return K8sJobRunner(
-                config=K8sJobRunnerConfig.model_validate(self._config.queue.k8s_job_runner),
+                config=K8sJobRunnerConfig.model_validate(
+                    self._config.queue.k8s_job_runner
+                ),
                 runner_config_factory=self._runner_config_factory,
             )
         else:

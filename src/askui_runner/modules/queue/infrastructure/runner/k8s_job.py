@@ -23,7 +23,7 @@ class K8sJobRunner(Runner):
         try:
             logging.info("Loading in-cluster config...")
             config.load_incluster_config()
-        except:  # pylint: disable=bare-except
+        except:  # noqa: E722
             logging.info("Failed. Falling back to kube config...")
             config.load_kube_config()
 
@@ -131,8 +131,11 @@ class K8sJobRunner(Runner):
                         tolerations=[
                             client.V1Toleration(
                                 **toleration.model_dump(),
-                            ) for toleration in self.config.tolerations
-                        ] if self.config.tolerations else None,
+                            )
+                            for toleration in self.config.tolerations
+                        ]
+                        if self.config.tolerations
+                        else None,
                         node_selector=self.config.node_selector,
                     ),
                 ),
@@ -172,9 +175,7 @@ class K8sJobRunner(Runner):
                 namespace=self.config.namespace,
             )
             if not job.status:
-                raise Exception(
-                    "The Kubernetes job has no status."
-                ) 
+                raise Exception("The Kubernetes job has no status.")
             return job.status
         except ApiException as exception:
             self._handle_api_exception(exception)
@@ -185,9 +186,9 @@ class K8sJobRunner(Runner):
         Check if the Kubernetes job is currently running.
         """
         try:
-            job_status = self._get_k8s_job_status()
+            self._get_k8s_job_status()
             return not self.has_passed() and not self.has_failed()
-        except:
+        except:  # noqa: E722
             return False
 
     def has_passed(self) -> bool:
@@ -202,7 +203,7 @@ class K8sJobRunner(Runner):
                 and (job_status.active is None or job_status.active == 0)
                 and (job_status.failed is None or job_status.failed == 0)
             )
-        except:
+        except:  # noqa: E722
             return False
 
     def has_failed(self) -> bool:
@@ -212,7 +213,7 @@ class K8sJobRunner(Runner):
         try:
             job_status = self._get_k8s_job_status()
             return job_status.failed is not None and job_status.failed > 0
-        except:
+        except:  # noqa: E722
             return True
 
     def stop(self) -> None:
