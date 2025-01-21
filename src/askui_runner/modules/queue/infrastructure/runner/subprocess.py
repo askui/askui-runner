@@ -4,8 +4,7 @@ import subprocess
 import tempfile
 from typing import Optional
 
-from ...domain import services
-from ...domain.services import RunnerJob
+from ...queue import Runner, RunnerJob
 from .shared import RunnerConfigFactory
 
 
@@ -17,7 +16,7 @@ def stop(process: subprocess.Popen[bytes], timeout: int = 30) -> None:
         process.kill()
 
 
-class SubprocessRunner(services.Runner):
+class SubprocessRunner(Runner):
     def __init__(
         self,
         runner_exec: str,

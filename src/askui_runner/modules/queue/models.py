@@ -2,7 +2,7 @@ import enum
 from typing import Any, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, model_validator, ConfigDict
+from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ..core.models import CoreConfigBase, WorkspaceCredentials
@@ -177,17 +177,20 @@ class Config(BaseSettings):
         default=EntryPoint.QUEUE, description="Entry point of the runner"
     )
     runner: RunnerConfig = Field(
-        default_factory=RunnerConfig, description="Configuration of the runner"
+        default_factory=RunnerConfig,  # type: ignore
+        description="Configuration of the runner",
     )
     queue: Optional[QueueConfig] = Field(
         default=None,
-        description="Configuration of the queue"  # type: ignore
+        description="Configuration of the queue",  # type: ignore
     )
     job_timeout: int = Field(
         default=3600,
         description="Timeout in seconds for a job to be completed before it is considered failed",
     )
-    job: RunnerJobData | None = Field(default=None, description="Configuration of the job")
+    job: RunnerJobData | None = Field(
+        default=None, description="Configuration of the job"
+    )
     log_level: LogLevel = Field(default=LogLevel.INFO, description="Log level")
 
     model_config = SettingsConfigDict(validate_assignment=True)
@@ -207,7 +210,7 @@ class Config(BaseSettings):
         return self
 
     @property
-    def runner_jobs_queue_polling_domain_service_config(
+    def runner_jobs_queue_polling_config(
         self,
     ) -> RunnerJobsQueuePollingConfig:
         return RunnerJobsQueuePollingConfig(

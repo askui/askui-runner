@@ -1,7 +1,7 @@
 import time
 from datetime import datetime, timezone
 
-from ...domain.services import Clock
+from ...queue import Clock
 
 
 class TimeClock(Clock):

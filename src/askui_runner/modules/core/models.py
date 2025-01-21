@@ -9,7 +9,9 @@ class FeatureToggles(BaseModel):
     run_workflows: bool = Field(True, description="Whether to run workflows")
     upload_results: bool = Field(True, description="Whether to upload results")
     teardown: bool = Field(True, description="Whether to run teardown project")
-    wait_for_controller: bool = Field(True, description="Whether to wait for the controller to start")
+    wait_for_controller: bool = Field(
+        True, description="Whether to wait for the controller to start"
+    )
 
 
 class WorkspaceCredentials(BaseModel):
@@ -41,8 +43,10 @@ class ControllerConfig(BaseModel):
 
 
 class CoreConfigBase(BaseModel):
-    controller: ControllerConfig = Field(default_factory=ControllerConfig) # type: ignore
-    runner_type: Literal["askui_jest_runner", "askui_vision_agent_experiments_runner"] = Field("askui_jest_runner", description="Type of the runner")
+    controller: ControllerConfig = Field(default_factory=ControllerConfig)  # type: ignore
+    runner_type: Literal[
+        "askui_jest_runner", "askui_vision_agent_experiments_runner"
+    ] = Field("askui_jest_runner", description="Type of the runner")
     command: str = Field(
         "npx jest --config jest.config.ts",
         description="Command to run the workflows",
@@ -64,5 +68,5 @@ class CoreConfig(CoreConfigBase, BaseSettings):
     results: ResultsConfig
     schedule_results: ScheduleResultsConfig | None
     data: dict[str, Any] = Field(default_factory=dict)
-    
+
     model_config = SettingsConfigDict(env_prefix="askui_runner_core_")

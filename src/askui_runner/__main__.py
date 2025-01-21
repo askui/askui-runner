@@ -5,24 +5,22 @@ from typing import Annotated
 import typer
 
 from .config import Config, read_config
-from .modules.core.containers import Container as CoreContainer
+from .modules.core.containers import CoreContainer
 from .modules.core.models import CoreConfig, ControllerConfig, ScheduleResultsConfig
 from .modules.core.models import ResultsConfig, WorkflowsConfig
-from .modules.queue.containers import Container as QueueContainer
+from .modules.queue.containers import QueueContainer
 from .modules.queue.models import EntryPoint
 
 
 def run_jobs_from_queue(config: Config) -> None:
-    container = QueueContainer()
-    container.config.from_pydantic(config)
-    container.runner_jobs_queue_polling_application_service().poll()
+    container = QueueContainer(config=config)
+    container.runner_jobs_queue_polling.poll()
 
 
 def run_job(config: Config) -> None:
     runner_core_config = build_runner_core_config(config)
-    container = CoreContainer()
-    container.config.from_pydantic(runner_core_config)
-    exit_code = container.runner().run()
+    container = CoreContainer(config=runner_core_config)
+    exit_code = container.runner.run()
     sys.exit(exit_code)
 
 
@@ -53,7 +51,7 @@ def build_runner_core_config(config: Config):
             dir=config.runner.results_dir,
         ),
         schedule_results=ScheduleResultsConfig(
-            api_url=runner_job_data.schedule_results_api_url or '',
+            api_url=runner_job_data.schedule_results_api_url or "",
             dir=config.runner.schedule_results_dir,
         ),
         data=runner_job_data.data,
@@ -61,7 +59,9 @@ def build_runner_core_config(config: Config):
 
 
 def take_entrypoint(config: Config) -> None:
-    logging.basicConfig(level=config.log_level.value, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=config.log_level.value, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     match config.entrypoint:
         case EntryPoint.QUEUE:
             run_jobs_from_queue(config)
@@ -73,7 +73,9 @@ def main(
     config_json_or_config_file_path: Annotated[
         str,
         typer.Option(
-            "--config", "-c", help="Path to config file (.json, .yaml, .yml supported) or config provided as json"
+            "--config",
+            "-c",
+            help="Path to config file (.json, .yaml, .yml supported) or config provided as json",
         ),
     ],
 ) -> None:

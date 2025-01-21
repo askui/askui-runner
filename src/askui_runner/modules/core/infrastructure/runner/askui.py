@@ -32,6 +32,7 @@ def copy_directory_contents(src_dir: str, dest_dir: str) -> None:
         else:
             shutil.copy2(src_path, dest_path)
 
+
 def is_port_open(host, port):
     """Check if a given port is open on a given host."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -42,6 +43,7 @@ def is_port_open(host, port):
         except socket.error:
             return False
 
+
 def wait_for_controller_to_start(host: str, port: int):
     while True:
         if is_port_open(host, port):
@@ -49,6 +51,7 @@ def wait_for_controller_to_start(host: str, port: int):
         else:
             logging.info(f"Waiting for controller to start on {host}:{port}...")
             time.sleep(10)
+
 
 class AskUIJestRunner(Runner):
     _TEMPLATE_EXTENSION = "jinja"
@@ -67,9 +70,7 @@ class AskUIJestRunner(Runner):
     @property
     def project_dir(
         self,
-    ) -> (
-        str
-    ):
+    ) -> str:
         entrypoint_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
         return os.path.join(entrypoint_dir, self.config.project_dir)
 
@@ -80,17 +81,19 @@ class AskUIJestRunner(Runner):
 
     def _render_templates(self, dir_path: str) -> None:
         jinja_env = self._create_jinja_env(dir_path=dir_path)
-        templates = jinja_env.list_templates(extensions=[AskUIJestRunner._TEMPLATE_EXTENSION])
+        templates = jinja_env.list_templates(
+            extensions=[AskUIJestRunner._TEMPLATE_EXTENSION]
+        )
         for template in templates:
-            template_name_without_extension = template[:-(len(AskUIJestRunner._TEMPLATE_EXTENSION) + 1)] # +1 for the dot
+            template_name_without_extension = template[
+                : -(len(AskUIJestRunner._TEMPLATE_EXTENSION) + 1)
+            ]  # +1 for the dot
             target_file_path = os.path.join(
-                dir_path, *template_name_without_extension.split('/')
+                dir_path, *template_name_without_extension.split("/")
             )
             with create_and_open(target_file_path, "w") as f:
                 f.write(
-                    jinja_env.get_template(template).render(
-                        self.config.model_dump()
-                    )
+                    jinja_env.get_template(template).render(self.config.model_dump())
                 )
 
     def setup(self, dir_path: str) -> None:
@@ -132,20 +135,24 @@ class AskUIVisionAgentExperimentsRunner(Runner):
     ) -> None:
         super().__init__(config)
         self.cwd = os.getcwd()
-        
+
     def run(self) -> RunWorkflowsResult:
         with tempfile.TemporaryDirectory(
             prefix="askui-runner-",
         ) as dir_path:
             os.chdir(dir_path)
             logging.info(f"Cloning vision agent experiments into {dir_path}...")
-            os.system("git clone --depth 1 --branch main --single-branch https://github.com/askui/vision-agent-experiments.git")
+            os.system(
+                "git clone --depth 1 --branch main --single-branch https://github.com/askui/vision-agent-experiments.git"
+            )
             os.chdir("vision-agent-experiments")
             logging.info("Setting up environment variables...")
             os.environ["ASKUI_WORKSPACE_ID"] = self.config.credentials.workspace_id
             os.environ["ASKUI_TOKEN"] = self.config.credentials.access_token
             for key, value in self.config.data.items():
-                os.environ[key.upper()] = json.dumps(value) if not isinstance(value, str) else value
+                os.environ[key.upper()] = (
+                    json.dumps(value) if not isinstance(value, str) else value
+                )
             logging.info("Installing dependencies with pdm install...")
             os.system("pdm install")
             logging.info("Running vision agent experiments with pdm run vae...")

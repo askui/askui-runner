@@ -1,11 +1,15 @@
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
-from ..models import Config, RunnerJobData, RunnerJobsFilters
+from .models import (
+    RunnerJobData,
+    RunnerJobsFilters,
+    RunnerJobsQueuePollingConfig,
+)
 
 
 class System(ABC):
@@ -109,24 +113,25 @@ class Runner(ABC):
     def stop(self) -> None:
         raise NotImplementedError()
 
+
 PING_THRESHOLD_IN_S = 60
 RUNNER_POLLING_INTERVAL_IN_S = 10
+
 
 class PingError(Exception):
     pass
 
+
 class RunnerJobsQueuePolling:
     def __init__(
         self,
-        config: dict[str, Any],
+        config: RunnerJobsQueuePollingConfig,
         queue: RunnerJobsQueue,
         runner: Runner,
         clock: Clock,
         system: System,
     ):
-        self.config = Config.model_validate(
-            config
-        ).runner_jobs_queue_polling_domain_service_config
+        self.config = config
         self.queue = queue
         self.runner = runner
         self.clock = clock

@@ -1,6 +1,7 @@
 import sys
 
-from ...domain.services import System
+from ...queue import System
+
 
 class SysSystem(System):
     def exit(self) -> None:

@@ -3,14 +3,13 @@ from typing import Optional
 
 import requests
 
-from ...domain import services
-from ...domain.services import RunnerJob, RunnerJobsQueuePingResult
+from ...queue import RunnerJob, RunnerJobsQueue, RunnerJobsQueuePingResult
 from ...models import RunnerJobsFilters
 
 REQUEST_TIMEOUT_IN_S = 60
 
 
-class AskUiRunnerJobsQueueService(services.RunnerJobsQueue):
+class AskUiRunnerJobsQueueService(RunnerJobsQueue):
     def __init__(self, url: str, headers: dict[str, str]):
         self.url = url
         self.headers = headers
