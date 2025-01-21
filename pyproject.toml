@@ -1,6 +1,6 @@
 [project]
 name = "askui-runner"
-version = "0.2.6"
+version = "0.2.7"
 description = "Runner for Workflows Defined in AskUI Studio"
 dependencies = [
     "pydantic>=2.10.4",
