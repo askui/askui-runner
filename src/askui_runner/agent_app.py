@@ -4,8 +4,8 @@ import click
 import typer
 
 from askui_runner.config import read_config_dict
-from .modules.core.containers import SyncContainer
-from .modules.core.models import AgentsConfig
+from .modules.agents.containers import SyncContainer
+from .modules.agents.models import AgentsConfig
 
 app = typer.Typer()
 

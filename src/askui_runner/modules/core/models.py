@@ -1,7 +1,5 @@
-import os
-from pathlib import Path
 from typing import Any, Literal
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -72,23 +70,3 @@ class CoreConfig(CoreConfigBase, BaseSettings):
     data: dict[str, Any] = Field(default_factory=dict)
 
     model_config = SettingsConfigDict(env_prefix="askui_runner_core_")
-
-
-class AgentFileSyncConfig(BaseModel):
-    base_url: HttpUrl = Field(
-        HttpUrl("https://workspaces.askui.com/api/v1/files/"),
-        description="Base URL of the files API.",
-    )
-    local_storage_base_dir: Path = Field(
-        Path(os.path.join(os.path.expanduser("~"), ".askui")),
-        description="Local directory for storing files.",
-    )
-
-
-class AgentsConfig(BaseSettings):
-    credentials: WorkspaceCredentials
-    sync: AgentFileSyncConfig = Field(
-        default_factory=AgentFileSyncConfig,  # type: ignore
-        description="Configuration for syncing files",
-    )
-    model_config = SettingsConfigDict(env_prefix="askui_runner_agents_", extra="allow")
