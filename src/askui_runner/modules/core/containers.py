@@ -1,7 +1,8 @@
 from functools import cached_property
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
-from .infrastructure.agent.agent_file_manager import AskUIAgentFileManager
+
+from .infrastructure.agent.agent_file_service import AskUIAgentFileService
 
 
 from .infrastructure.askui import AskUiAccessToken
@@ -15,7 +16,7 @@ from .infrastructure.runner.askui import (
     AskUIVisionAgentExperimentsRunner,
 )
 from .infrastructure.workflows_download.askui import AskUiWorkflowsDownloadService
-from .models import AgentConfig, CoreConfig
+from .models import AgentsConfig, CoreConfig
 from .runner import ResultsUpload
 
 
@@ -94,8 +95,8 @@ class CoreContainer:
 
 
 class SyncContainer:
-    def __init__(self, config_dict: Dict[str, Any]):
-        self._config: AgentConfig = AgentConfig.model_validate(config_dict)
+    def __init__(self, config: AgentsConfig):
+        self._config: AgentsConfig = config
 
     @cached_property
     def _access_token(self) -> AskUiAccessToken:
@@ -106,13 +107,13 @@ class SyncContainer:
         return {"Authorization": self._access_token.to_auth_header()}
 
     @cached_property
-    def _agent_file_service(self) -> AskUIAgentFileManager:
+    def _agent_file_service(self) -> AskUIAgentFileService:
         files_sync_service = AskUiFilesService(
-            base_url=self._config.sync.base_url,
+            base_url=str(self._config.sync.base_url),
             headers=self._base_http_headers,
         )
-        return AskUIAgentFileManager(
+        return AskUIAgentFileService(
             files_sync_service=files_sync_service,
-            local_storage_dir=self._config.sync.local_storage_dir,
-            remote_workflow_path=f"workspaces/{self._config.credentials.workspace_id}/Agents",
+            local_storage_base_dir=self._config.sync.local_storage_base_dir,
+            workspace_id=self._config.credentials.workspace_id,
         )

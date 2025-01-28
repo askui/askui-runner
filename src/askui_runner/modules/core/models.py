@@ -1,7 +1,7 @@
-import json
 import os
+from pathlib import Path
 from typing import Any, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -76,33 +76,19 @@ class CoreConfig(CoreConfigBase, BaseSettings):
 
 class AgentFileSyncConfig(BaseModel):
     base_url: HttpUrl = Field(
-        "https://workspaces.askui.com/api/v1/files/",
+        HttpUrl("https://workspaces.askui.com/api/v1/files/"),
         description="Base URL of the files API.",
     )
-    local_storage_dir: str = Field(
-        os.path.join(os.path.expanduser("~"), ".askui", "Agents"),
+    local_storage_base_dir: Path = Field(
+        Path(os.path.join(os.path.expanduser("~"), ".askui")),
         description="Local directory for storing files.",
     )
 
 
-class AgentConfig(BaseSettings):
+class AgentsConfig(BaseSettings):
     credentials: WorkspaceCredentials
     sync: AgentFileSyncConfig = Field(
         default_factory=AgentFileSyncConfig,  # type: ignore
         description="Configuration for syncing files",
     )
     model_config = SettingsConfigDict(env_prefix="askui_runner_agents_", extra="allow")
-
-    def dump_example_config_to_json_file(self, output_file_path: str) -> None:
-        os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
-
-        example_config = self.model_validate_strings(
-            {
-                "credentials": {
-                    "access_token": "your_access_token",
-                    "workspace_id": "your_workspace_id",
-                }
-            }
-        )
-        with open(output_file_path, "w") as json_file:
-            json.dump(example_config.model_dump(), json_file, indent=4)

@@ -1,16 +1,18 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 import click
 import typer
 
 from askui_runner.config import read_config_dict
 from .modules.core.containers import SyncContainer
-from .modules.core.models import AgentConfig
+from .modules.core.models import AgentsConfig
 
 app = typer.Typer()
 
 
-@app.command()
+@app.command(
+    help="Sync files between local and remote storage",
+)
 def sync(
     config_json_or_config_file_path: Annotated[
         str,
@@ -21,8 +23,8 @@ def sync(
         ),
     ],
     direction: Annotated[
-        str,
-        typer.Argument(click_type=click.Choice(["Down", "Up"], case_sensitive=False)),
+        Literal["down", "up"],
+        typer.Argument(click_type=click.Choice(["down", "up"], case_sensitive=False)),
     ],
     dry: Annotated[
         bool,
@@ -40,29 +42,26 @@ def sync(
     ] = False,
 ):
     config_dict = read_config_dict(config_json_or_config_file_path)
-    container = SyncContainer(config_dict=config_dict)
+    config = AgentsConfig.model_validate(config_dict)
+    container = SyncContainer(config=config)
 
-    if direction == "Down":
+    if direction == "down":
         container._agent_file_service.sync("remote", dry, delete)
-    elif direction == "Up":
+        return
+    if direction == "up":
         container._agent_file_service.sync("local", dry, delete)
-    else:
-        raise typer.BadParameter(
-            "Sync direction should be either 'Download' or 'Upload'"
-        )
+        return
 
 
-@app.command()
-def generate_config(
-    output_file_path: str = typer.Option(
-        ..., "--output", "-o", help="Path to json output config file"
-    ),
-):
-    AgentConfig.model_validate_strings(
+@app.command(help="Show an example configuration for the agent app")
+def show_example_configuration():
+    example_config = AgentsConfig.model_validate_strings(
         {
             "credentials": {
                 "access_token": "your_access_token",
                 "workspace_id": "your_workspace_id",
             }
         }
-    ).dump_example_config_to_json_file(output_file_path)
+    ).model_dump_json(indent=2)
+
+    print(example_config)
