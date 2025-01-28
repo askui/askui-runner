@@ -74,8 +74,8 @@ class CoreConfig(CoreConfigBase, BaseSettings):
     model_config = SettingsConfigDict(env_prefix="askui_runner_core_")
 
 
-class AgentFileSyncConfig(BaseSettings):
-    base_url: str = Field(
+class AgentFileSyncConfig(BaseModel):
+    base_url: HttpUrl = Field(
         "https://workspaces.askui.com/api/v1/files/",
         description="Base URL of the files API.",
     )
@@ -91,7 +91,7 @@ class AgentConfig(BaseSettings):
         default_factory=AgentFileSyncConfig,  # type: ignore
         description="Configuration for syncing files",
     )
-    model_config = SettingsConfigDict(env_prefix="askui_agent", extra="allow")
+    model_config = SettingsConfigDict(env_prefix="askui_runner_agents_", extra="allow")
 
     def dump_example_config_to_json_file(self, output_file_path: str) -> None:
         os.makedirs(os.path.dirname(output_file_path), exist_ok=True)

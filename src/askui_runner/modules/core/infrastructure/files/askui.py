@@ -20,7 +20,7 @@ class FileDto(BaseModel):
         ..., alias="lastModified", description="Last modified date of the file"
     )
     url: str = Field(..., description="URL of the file")
-    size: int = Field(..., description="Size of the file")
+    size: int = Field(..., description="Size of the file in bytes")
 
     model_config = ConfigDict(frozen=True)
 
@@ -132,7 +132,7 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
                 else self._upload_file(local_file_path, remote_file_path)
             ),
             "download": lambda remote_file_url, remote_file_last_modified, local_path: (
-                logging.info(f"Dry: Download file to {local_path}")
+                logging.info(f"Dry: Download file to {local_path} from {self._base_url}/{quote(remote_file_path)} (last modified on {remote_file_last_modified})")
                 if dry
                 else self._download_file(
                     remote_file_url, local_path, remote_file_last_modified

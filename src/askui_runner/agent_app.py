@@ -28,7 +28,7 @@ def sync(
         bool,
         typer.Option(
             "--dry",
-            help="Dry run, List all actions without executing",
+            help="Displays the operations that would be performed using the specified command without actually running them",
         ),
     ] = False,
     delete: Annotated[
