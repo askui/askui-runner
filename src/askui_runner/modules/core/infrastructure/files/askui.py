@@ -1,7 +1,7 @@
 import logging
 import os
 import re
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Generator, Literal, Optional, Union
 from urllib.parse import urlencode, urljoin, quote
 from datetime import datetime, timezone
 
@@ -57,8 +57,7 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
         if self._disabled:
             return
         prefix = remote_path.lstrip("/")
-        list_objects_response = self._list_object_recursive(prefix)
-        for content in list_objects_response.data:
+        for content in self._list_remote_objects(prefix):
             if prefix == content.path:  # is a file
                 relative_remote_path = content.name
             else:  # is a prefix, e.g., folder
@@ -89,9 +88,9 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
     ) -> None:
         # List remote files
         remote_files: Dict[str, FileDto] = {}
-        list_objects_response = self._list_object_recursive(remote_dir_path)
-        for content in list_objects_response.data:
-            remote_files[content.path[len(remote_dir_path) :].lstrip("/")] = content
+
+        for file in self._list_remote_objects(remote_dir_path):
+            remote_files[file.path[len(remote_dir_path) :].lstrip("/")] = file
 
         # List local files
         local_files = self._list_local_files(local_dir_path)
@@ -220,33 +219,6 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
             ),
         )
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True)
-    def _list_objects(
-        self, prefix: str, continuation_token: str | None = None
-    ) -> FilesListResponseDto:
-        params = {"prefix": prefix, "limit": 100, "expand": "url"}
-        if continuation_token is not None:
-            params["continuation_token"] = continuation_token
-        list_url = f"{self._base_url}?{urlencode(params)}"
-        response = requests.get(
-            list_url, headers=self._headers, timeout=REQUEST_TIMEOUT_IN_S
-        )
-        if response.status_code != 200:
-            response.raise_for_status()
-
-        file_list_response = FilesListResponseDto(**response.json())
-        filtered_response_data = [
-            file
-            for file in file_list_response.data
-            if not any(
-                re.match(pattern, file.path) for pattern in self.HIDDEN_FILES_PATTERNS
-            )
-        ]
-        return FilesListResponseDto(
-            data=filtered_response_data,
-            next_continuation_token=file_list_response.next_continuation_token,
-        )
-
     def _list_local_files(self, local_dir_path: str) -> dict[str, FileDto]:
         """List all files in a local directory."""
         local_files = {}
@@ -269,16 +241,35 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
                 )
         return local_files
 
-    def _list_object_recursive(self, prefix: str) -> FilesListResponseDto:
-        all_files = []
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True)
+    def _list_remote_objects(self, prefix: str) -> Generator[FileDto, None, None]:
         continuation_token = None
         while True:
-            list_objects_response = self._list_objects(prefix, continuation_token)
-            all_files.extend(list_objects_response.data)
-            continuation_token = list_objects_response.next_continuation_token
-            if continuation_token is None:
+            params = {"prefix": prefix, "limit": 100, "expand": "url"}
+            if continuation_token:
+                params["continuation_token"] = continuation_token
+
+            list_url = f"{self._base_url}?{urlencode(params)}"
+            response = requests.get(
+                list_url, headers=self._headers, timeout=REQUEST_TIMEOUT_IN_S
+            )
+
+            response.raise_for_status()
+
+            file_list_response = FilesListResponseDto(**response.json())
+
+            for file in file_list_response.data:
+                if any(
+                    re.match(pattern, file.path)
+                    for pattern in self.HIDDEN_FILES_PATTERNS
+                ):
+                    continue
+
+                yield file
+
+            continuation_token = file_list_response.next_continuation_token
+            if not continuation_token:
                 break
-        return FilesListResponseDto(data=all_files, next_continuation_token=None)
 
     def _upload_dir(self, local_dir_path: str, remote_dir_path: str) -> None:
         for root, _, files in os.walk(local_dir_path):
