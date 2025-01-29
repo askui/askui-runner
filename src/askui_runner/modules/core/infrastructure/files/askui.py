@@ -21,7 +21,7 @@ class FileDto(BaseModel):
     url: str = Field(..., description="URL of the file")
     size: int = Field(..., description="Size of the file in bytes")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
 
 
 class FilesListResponseDto(BaseModel):
@@ -105,8 +105,8 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
 
             # File exists in both locations
             if local_file and remote_file:
-                local_mtime = local_file.last_modified.timestamp()
-                remote_mtime = remote_file.last_modified.timestamp()
+                local_mtime = local_file.last_modified
+                remote_mtime = remote_file.last_modified
 
                 if source_of_truth == "local" and (
                     local_mtime > remote_mtime or local_file.size != remote_file.size
@@ -150,8 +150,8 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
             url=quote(remote_file_path),
         )
 
+        logging.info(f"Uploading {local_file_path} to {url} ...")
         if dry:
-            logging.info(f"Dry: Uploading {local_file_path} to {url}.")
             return
 
         with open(local_file_path, "rb") as f:
@@ -167,8 +167,8 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True)
     def _delete_remote_file(self, remote_file_path: str, dry=False) -> None:
+        logging.info(f"Deleting file {remote_file_path} ...")
         if dry:
-            logging.info(f"Dry: Deleting file {remote_file_path}")
             return
 
         delete_url = urljoin(self._base_url + "/", remote_file_path)
@@ -177,8 +177,8 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
             response.raise_for_status()
 
     def _delete_local_file(self, local_file_path: str, dry=False) -> None:
+        logging.info(f"Deleting file {local_file_path} ...")
         if dry:
-            logging.info(f"Dry: Deleting file {local_file_path}")
             return
 
         os.remove(local_file_path)
@@ -191,10 +191,10 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
         last_modified_on_remote: AwareDatetime,
         dry=False,
     ) -> None:
+        logging.info(
+            f"Downloading file to {local_file_path} from {url}. Last modified on {last_modified_on_remote} ..."
+        )
         if dry:
-            logging.info(
-                f"Dry: Downloading file to {local_file_path} from {url}. Last modified on {last_modified_on_remote}"
-            )
             return
 
         os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
@@ -229,16 +229,15 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
                     file_path, start=local_dir_path
                 ).replace(os.sep, "/")
                 file_stats = os.stat(file_path)
-                last_modified = datetime.fromtimestamp(
-                    file_stats.st_mtime, tz=timezone.utc
-                )
                 local_files[relative_path] = FileDto(
                     name=os.path.basename(file_path),
                     path=file_path,
-                    lastModified=last_modified,
+                    last_modified=datetime.fromtimestamp(
+                        file_stats.st_mtime, tz=timezone.utc
+                    ),
                     url=f"file://{file_path}",
                     size=file_stats.st_size,
-                )
+                )  # type: ignore[call-arg]
         return local_files
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True)

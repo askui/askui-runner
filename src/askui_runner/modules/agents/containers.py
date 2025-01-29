@@ -9,7 +9,7 @@ from ..core.infrastructure.files.askui import AskUiFilesService
 from .models import AgentsConfig
 
 
-class SyncContainer:
+class AgentsContainer:
     def __init__(self, config: AgentsConfig):
         self._config: AgentsConfig = config
 
@@ -22,7 +22,7 @@ class SyncContainer:
         return {"Authorization": self._access_token.to_auth_header()}
 
     @cached_property
-    def _agent_file_service(self) -> AskUIAgentFileService:
+    def agent_file_service(self) -> AskUIAgentFileService:
         files_sync_service = AskUiFilesService(
             base_url=str(self._config.sync.base_url),
             headers=self._base_http_headers,
