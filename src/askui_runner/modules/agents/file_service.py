@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 from typing import Literal
-from ..files.files import FilesSyncService
+from ..core.infrastructure.files.files import FilesSyncService
 
 
-class AskUIAgentFileService:
+class FileService:
     def __init__(
         self,
         files_sync_service: FilesSyncService,

@@ -6,7 +6,7 @@ import typer
 
 from askui_runner.config import read_config_dict
 from .modules.agents.containers import AgentsContainer
-from .modules.agents.models import AgentsConfig
+from .modules.agents.config import AgentsConfig
 
 app = typer.Typer()
 
@@ -47,10 +47,10 @@ def sync(
     container = AgentsContainer(config=config)
 
     if direction == "down":
-        container.agent_file_service.sync("remote", dry, delete)
+        container.file_service.sync("remote", dry, delete)
         return
     if direction == "up":
-        container.agent_file_service.sync("local", dry, delete)
+        container.file_service.sync("local", dry, delete)
         return
 
 

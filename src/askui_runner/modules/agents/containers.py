@@ -1,12 +1,12 @@
 from functools import cached_property
 from typing import Dict
 
-from ..core.infrastructure.agent.agent_file_service import AskUIAgentFileService
+from .file_service import FileService
 from ..core.infrastructure.askui import AskUiAccessToken
 from ..core.infrastructure.files.askui import AskUiFilesService
 
 
-from .models import AgentsConfig
+from .config import AgentsConfig
 
 
 class AgentsContainer:
@@ -22,12 +22,12 @@ class AgentsContainer:
         return {"Authorization": self._access_token.to_auth_header()}
 
     @cached_property
-    def agent_file_service(self) -> AskUIAgentFileService:
+    def file_service(self) -> FileService:
         files_sync_service = AskUiFilesService(
             base_url=str(self._config.sync.base_url),
             headers=self._base_http_headers,
         )
-        return AskUIAgentFileService(
+        return FileService(
             files_sync_service=files_sync_service,
             local_storage_base_dir=self._config.sync.local_storage_base_dir,
             workspace_id=self._config.credentials.workspace_id,
