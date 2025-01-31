@@ -10,6 +10,9 @@ from .modules.core.models import CoreConfig, ControllerConfig, ScheduleResultsCo
 from .modules.core.models import ResultsConfig, WorkflowsConfig
 from .modules.queue.containers import QueueContainer
 from .modules.queue.models import EntryPoint
+from .agent_app import app as agent_app
+
+app = typer.Typer(add_completion=False)
 
 
 def run_jobs_from_queue(config: Config) -> None:
@@ -69,6 +72,7 @@ def take_entrypoint(config: Config) -> None:
             run_job(config)
 
 
+@app.command(name="start")
 def main(
     config_json_or_config_file_path: Annotated[
         str,
@@ -83,5 +87,10 @@ def main(
     take_entrypoint(config)
 
 
+app.add_typer(agent_app, name="agent")
+
 if __name__ == "__main__":
-    typer.run(main)
+    logging.basicConfig(
+        level="INFO", format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+    app()
