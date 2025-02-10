@@ -95,16 +95,24 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
         # List local files
         local_files = self._list_local_files(local_dir_path)
 
+        if len(local_files) == 0 and len(remote_files) == 0:
+            logging.warning("No files found locally or remotely. Skipping sync.")
+            return
+
         if source_of_truth == "local" and len(local_files) == 0 and not delete:
-            logging.warning("No files found locally and delete is disabled. Skipping sync.")
+            logging.warning(
+                "No files found locally and delete is disabled. Skipping sync."
+            )
             logging.debug(f"Local directory: {local_dir_path}")
             return
-        
+
         if source_of_truth == "remote" and len(remote_files) == 0 and not delete:
-            logging.warning("No files found remotely and delete is disabled. Skipping sync.")
+            logging.warning(
+                "No files found remotely and delete is disabled. Skipping sync."
+            )
             logging.debug(f"Remote directory: {remote_dir_path}")
             return
-        
+
         # Create lookup table
         all_paths = set(local_files.keys()) | set(remote_files.keys())
         if dry:
