@@ -14,7 +14,6 @@ Runner for Workflows Defined in AskUI Studio.
 - [Contributing](#contributing)
 - [License](#license)
 
-
 ## Requirements
 
 - Python 3.10 or higher
@@ -64,13 +63,13 @@ python -m askui_runner start -c <path to your config file, e.g., askui-runner.co
 
 If you want to run your workflows on the same system as the runner you need to start an UiController that listens on port `6769`. Please download the one for your operating system and start it:
 
-* For Windows please your our AskUI Installer: [Windows Getting Started](https://docs.askui.com/docs/general/Getting%20Started/Installing%20AskUI/getting-started)
-* [Linux](https://files.askui.com/releases/askui-ui-controller/latest/linux/x64/askui-ui-controller.AppImage)
+- For Windows please use our AskUI Installer: [Windows Getting Started](https://docs.askui.com/docs/general/Getting%20Started/Installing%20AskUI/getting-started)
+- [Linux](https://files.askui.com/releases/askui-ui-controller/latest/linux/x64/askui-ui-controller.AppImage)
 
 > ℹ️ **macOS** After installation to `Applications` remove the quarantine flag with the following command run from a terminal: `xattr -d com.apple.quarantine /Applications/askui-ui-controller.app`
 
-* [macOS(intel)](https://files.askui.com/releases/askui-ui-controller/latest/darwin/x64/askui-ui-controller.dmg)
-* [macOS(silicon)](https://files.askui.com/releases/askui-ui-controller/latest/darwin/arm64/askui-ui-controller.dmg)
+- [macOS(intel)](https://files.askui.com/releases/askui-ui-controller/latest/darwin/x64/askui-ui-controller.dmg)
+- [macOS(silicon)](https://files.askui.com/releases/askui-ui-controller/latest/darwin/arm64/askui-ui-controller.dmg)
 
 ### Execute Workflows on a Remote System: Change UiController URL
 
@@ -88,6 +87,7 @@ runner:
 ## Generating up-to-date Configuration Schema
 
 Requirements:
+
 - [PDM](https://pdm.fming.dev/latest/) 2.8 or higher for contributing and creating the JSON schema of the config
 
 Find out about all configuration options by taking a look at the JSON schema of the configuration. You can generate an up-to-date JSON schema by cloning this repository and running the following commands.
@@ -98,6 +98,51 @@ pip install pdm
 pdm install
 
 pdm run python -m scripts.generate_config_schema_json
+```
+
+## AskUI Agents
+
+### Sync
+
+The Agent sync command helps sync agent files between local and remote storage. You can specify the direction (up or down) for syncing and control other sync options.
+
+```bash
+python -m askui_runner agent sync <parameters>
+```
+
+- Parameters:
+  - `--config`: Path to your config file in .json, .yaml, or .yml format or a raw JSON config.
+  - direction: The direction of the sync:
+    - `down`: Sync files from remote storage to local.
+    - `up`: Sync files from local storage to remote.
+  - `--dry`: Display the operations that would be performed without executing them.
+  - `--delete`: Delete files not found in the source of truth during sync.
+  - `--help`: Display the help message.
+  
+example:
+
+```bash
+# Sync agent files from remote storage to local in dry-run mode.
+python -m askui_runner agent sync down --config askui-runner.config.yaml --dry
+```
+
+#### Sync Configuration
+
+The sync command requires a configuration file to be passed in. The configuration file should contain the following fields:
+
+```json
+{
+  "credentials": {
+    "workspace_id": "<workspace_id>",
+    "access_token": "<access_token>"
+  }
+}
+```
+
+To display the configuration schema, run the following command:
+
+```bash
+python -m askui_runner agent print-config-schema
 ```
 
 ## Contributing
