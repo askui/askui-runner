@@ -164,14 +164,6 @@ class RunnerJobData(BaseModel):
         }
 
 
-class LogLevel(str, enum.Enum):
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
-
-
 class Config(BaseSettings):
     entrypoint: EntryPoint = Field(
         default=EntryPoint.QUEUE, description="Entry point of the runner"
@@ -191,7 +183,6 @@ class Config(BaseSettings):
     job: RunnerJobData | None = Field(
         default=None, description="Configuration of the job"
     )
-    log_level: LogLevel = Field(default=LogLevel.INFO, description="Log level")
 
     model_config = SettingsConfigDict(validate_assignment=True)
 

@@ -4,6 +4,7 @@ from typing import Any
 import yaml
 from pydantic_settings import SettingsConfigDict
 
+
 from .modules.queue import config as queue_config
 
 
