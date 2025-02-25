@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 
 import requests
 from pydantic import AwareDatetime, BaseModel, Field, ConfigDict
-from tenacity import retry, stop_after_attempt, wait_exponential
 
+from .retry_utils import http_retry, handle_response_status
 from .files import FilesDownloadService, FilesUploadService, FilesSyncService
 
 
@@ -130,7 +130,9 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
                 if source_of_truth == "local" and (
                     local_mtime > remote_mtime or local_file.size != remote_file.size
                 ):
-                    self._upload_file(local_file.path, remote_file_path, dry)
+                    self._upload_file(
+                        local_file.path, remote_file_path, dry, strict=True
+                    )
 
                 elif source_of_truth == "remote" and (
                     remote_mtime > local_mtime or local_file.size != remote_file.size
@@ -146,7 +148,9 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
             # File exists only locally
             elif local_file:
                 if source_of_truth == "local":
-                    self._upload_file(local_file.path, remote_file_path, dry)
+                    self._upload_file(
+                        local_file.path, remote_file_path, dry, strict=True
+                    )
                 elif delete:
                     self._delete_local_file(local_file.path, dry)
 
@@ -160,14 +164,22 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
                 elif delete:
                     self._delete_remote_file(remote_file_path, dry)
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True)
+    @http_retry
     def _upload_file(
-        self, local_file_path: str, remote_file_path: str, dry=False
+        self,
+        local_file_path: str,
+        remote_file_path: str,
+        dry=False,
+        strict=False,
     ) -> None:
+        query_params = {
+            "strict": strict,
+        }
         url = urljoin(
             base=self._base_url + "/",
             url=quote(remote_file_path),
         )
+        url = f"{url}?{urlencode(query_params)}"
 
         logging.info(f"Uploading {local_file_path} to {url} ...")
         if dry:
@@ -181,10 +193,9 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
                 timeout=UPLOAD_REQUEST_TIMEOUT_IN_S,
                 stream=True,
             ) as response:
-                if response.status_code != 200:
-                    response.raise_for_status()
+                handle_response_status(response)
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True)
+    @http_retry
     def _delete_remote_file(self, remote_file_path: str, dry=False) -> None:
         logging.info(f"Deleting file {remote_file_path} ...")
         if dry:
@@ -192,8 +203,7 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
 
         delete_url = urljoin(self._base_url + "/", remote_file_path)
         response = requests.delete(delete_url, headers=self._headers)
-        if response.status_code != 204:
-            response.raise_for_status()
+        handle_response_status(response, 204)
 
     def _delete_local_file(self, local_file_path: str, dry=False) -> None:
         logging.info(f"Deleting file {local_file_path} ...")
@@ -202,7 +212,7 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
 
         os.remove(local_file_path)
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True)
+    @http_retry
     def _download_file(
         self,
         url: str,
@@ -223,8 +233,7 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
             timeout=REQUEST_TIMEOUT_IN_S,
             stream=True,
         )
-        if response.status_code != 200:
-            response.raise_for_status()
+        handle_response_status(response)
         with open(local_file_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
@@ -259,7 +268,7 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
                 )  # type: ignore[call-arg]
         return local_files
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(), reraise=True)
+    @http_retry
     def _list_remote_objects(self, prefix: str) -> Generator[FileDto, None, None]:
         continuation_token = None
         while True:
@@ -271,8 +280,7 @@ class AskUiFilesService(FilesUploadService, FilesDownloadService, FilesSyncServi
             response = requests.get(
                 list_url, headers=self._headers, timeout=REQUEST_TIMEOUT_IN_S
             )
-
-            response.raise_for_status()
+            handle_response_status(response)
 
             file_list_response = FilesListResponseDto(**response.json())
 
