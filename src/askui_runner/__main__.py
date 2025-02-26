@@ -1,10 +1,10 @@
-import logging
 import sys
 from typing import Annotated
 
 import typer
 
 from .config import Config, read_config
+from .logging import configure_logging
 from .modules.core.containers import CoreContainer
 from .modules.core.models import CoreConfig, ControllerConfig, ScheduleResultsConfig
 from .modules.core.models import ResultsConfig, WorkflowsConfig
@@ -62,9 +62,6 @@ def build_runner_core_config(config: Config):
 
 
 def take_entrypoint(config: Config) -> None:
-    logging.basicConfig(
-        level=config.log_level.value, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
     match config.entrypoint:
         case EntryPoint.QUEUE:
             run_jobs_from_queue(config)
@@ -90,7 +87,5 @@ def main(
 app.add_typer(agent_app, name="agent")
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level="INFO", format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    configure_logging()
     app()

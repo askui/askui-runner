@@ -145,6 +145,20 @@ To display the configuration schema, run the following command:
 python -m askui_runner agent print-config-schema
 ```
 
+### Logging Configuration
+
+You can configure the logging behavior of the AskUI Runner through environment variables:
+
+```bash
+# Set logging level
+export ASKUI_RUNNER__LOG__LEVEL=INFO # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+# Set custom log format
+export ASKUI_RUNNER__LOG__FORMAT="%(asctime)s - %(levelname)s - %(message)s"
+```
+
+The default logging level is `INFO` and the default format is `%(asctime)s - %(levelname)s - %(message)s`. The log format is a [Python logging format string](https://docs.python.org/3/library/logging.html). Check the link for more information on how to customize the log format and which attributes, e.g., `asctime` and `levelname`, are available.
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
